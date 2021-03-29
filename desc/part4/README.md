@@ -92,7 +92,7 @@ struct pt_t {
 
 int global_i;    // statically allocated
 
-int foo(int a     // stack allocated) {
+int foo(int a     /* stack allocated */) {
   int i;          // register allocated
   int j;          // stack allocated (used in addressOf operator)
   int arr[10];    // stack allocated (it is an array)

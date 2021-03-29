@@ -277,8 +277,8 @@ public abstract class AssemblyItem {
             public Load(String opcode, Register op1, Register op2, int imm) {
                 super(opcode, op1, op2, imm);
             }
-            public Store rebuild(Map<Register,Register> regMap) {
-                return new Store(opcode, regMap.getOrDefault(op1, op1),regMap.getOrDefault(op2, op2), imm);
+            public Load rebuild(Map<Register,Register> regMap) {
+                return new Load(opcode, regMap.getOrDefault(op1, op1),regMap.getOrDefault(op2, op2), imm);
             }
             public Register def() {
                 return op1;
