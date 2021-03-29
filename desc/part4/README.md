@@ -92,12 +92,12 @@ struct pt_t {
 
 int global_i;    // statically allocated
 
-int foo(int a    // stack allocated) {
-  int i;         // register allocated
-  int j;         // stack allocated (used in addressOf operator)
-  int arr[10];   // stack allocated (it is an array)
+int foo(int a     // stack allocated) {
+  int i;          // register allocated
+  int j;          // stack allocated (used in addressOf operator)
+  int arr[10];    // stack allocated (it is an array)
   struct pt_t pt; // stack allocated (it is a struct)
-  int * ptr;     // register allocated
+  int * ptr;      // register allocated
   ...
   ptr = &j;
   ...
