@@ -63,34 +63,9 @@ public class Tokeniser {
             return next();
 
         // Simple characters
-        if (c == '+')
-            return new Token(TokenClass.PLUS, line, column);
-        if (c == '-')
-            return new Token(TokenClass.MINUS, line, column);
-        if (c == '*')
-            return new Token(TokenClass.ASTERIX, line, column);
-        if (c == '%')
-            return new Token(TokenClass.REM, line, column);
-        if (c == '&')
-            return new Token(TokenClass.AND, line, column);
-        if (c == '{')
-            return new Token(TokenClass.LBRA, line, column);
-        if (c == '}')
-            return new Token(TokenClass.RBRA, line, column);
-        if (c == '(')
-            return new Token(TokenClass.LPAR, line, column);
-        if (c == ')')
-            return new Token(TokenClass.RPAR, line, column);
-        if (c == '[')
-            return new Token(TokenClass.LSBR, line, column);
-        if (c == ']')
-            return new Token(TokenClass.RSBR, line, column);
-        if (c == ';')
-            return new Token(TokenClass.SC, line, column);
-        if (c == ',')
-            return new Token(TokenClass.COMMA, line, column);
-        if (c == '.')
-            return new Token(TokenClass.DOT, line, column);
+        Token result = checkSimpleSingleCharacters(c);
+        if(result != null)
+            return result;
 
         // Simple double characters
         if (c == '!' && scanner.peek() == '=') {
@@ -110,13 +85,13 @@ public class Tokeniser {
         if (c == '/') {
             if( scanner.peek() == '/') {
                 while( scanner.next() != '\n');
-                next();
+                return next();
             }
             if( scanner.peek() == '*') {
                 scanner.next();
                 while( scanner.next() != '*' && scanner.peek() == '/');
                 scanner.next();
-                next();
+                return next();
             }
             return new Token(TokenClass.DIV, line, column);
         }
@@ -142,25 +117,23 @@ public class Tokeniser {
             return new Token(TokenClass.GT, line, column);
         }
 
-        // Gets weiiiirdd here
+        // Dynamic lengths
         if (c == '#' && isFollowedByInclude()) {
             return new Token(TokenClass.INCLUDE, line, column);
         }
-        if (c == '\'') {
+        if (c == '\'') { //TODO
             scanner.next();
             if(scanner.next() == '\'')
                 return new Token(TokenClass.CHAR_LITERAL, line, column);
         }
-        if (c == '"' && isStringCorrect()) {
-            return new Token(TokenClass.STRING_LITERAL, line, column);
+        if (c == '"') {
+            return handleStringLiteral();
         }
         if (Character.isDigit(c)) {
-            traverseInt();
-            return new Token(TokenClass.INT_LITERAL, line, column);
+            return handleIntLiteral(c, line, column);
         }
         if (Character.isLetter(c) || c == '_')
-            return handleWordsAndIdentifiers(c);
-
+            return handleWordsAndIdentifiers(c, line, column);
 
 
         // if we reach this point, it means we did not recognise a valid token
@@ -168,37 +141,55 @@ public class Tokeniser {
         return new Token(TokenClass.INVALID, line, column);
     }
 
-    private void traverseInt() throws IOException {
+    private Token checkSimpleSingleCharacters(char c) {
+        int line = scanner.getLine();
+        int column = scanner.getColumn();
+        switch (c) {
+            case '+': return new Token(TokenClass.PLUS, line, column);
+            case '-': return new Token(TokenClass.MINUS, line, column);
+            case '*': return new Token(TokenClass.ASTERIX, line, column);
+            case '%': return new Token(TokenClass.REM, line, column);
+            case '&': return new Token(TokenClass.AND, line, column);
+            case '{': return new Token(TokenClass.LBRA, line, column);
+            case '}': return new Token(TokenClass.RBRA, line, column);
+            case '(': return new Token(TokenClass.LPAR, line, column);
+            case ')': return new Token(TokenClass.RPAR, line, column);
+            case '[': return new Token(TokenClass.LSBR, line, column);
+            case ']': return new Token(TokenClass.RSBR, line, column);
+            case ';': return new Token(TokenClass.SC, line, column);
+            case ',': return new Token(TokenClass.COMMA, line, column);
+            case '.': return new Token(TokenClass.DOT, line, column);
+            default: return null;
+        }
+    }
+
+    private Token handleIntLiteral(char c, int line, int column) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        sb.append(c);
         while (Character.isDigit(scanner.peek())) {
-            scanner.next();
+            sb.append(scanner.next());
         }
+        return new Token(TokenClass.INT_LITERAL, sb.toString(), line, column);
     }
 
-    private void traverseIdentifiers() throws IOException {
-        char nextChar = scanner.peek();
-        while (nextChar != '\n' &&
-                (Character.isDigit(nextChar) || Character.isLetter(nextChar) || nextChar == '_')) {
-            scanner.next();
-        }
-    }
-
-    private boolean isStringCorrect() throws IOException {
+    private Token handleStringLiteral() throws IOException {
+        StringBuilder sb = new StringBuilder();
         while (scanner.peek() != '"') {
             if (scanner.peek() == '\n') {
-                scanner.next();
-                return false;
+                error(scanner.peek(), scanner.getLine(), scanner.getColumn());
+                return new Token(TokenClass.INVALID, "\\n", scanner.getLine(), scanner.getColumn());
             }
 
-            if (scanner.peek() == '\\') {
-                scanner.next();
+            if (scanner.peek() == '\\') { //TODO
+                sb.append(scanner.next());
                 if(!escapableCharacters.contains(scanner.peek()))
                     error(scanner.peek(), scanner.getLine(), scanner.getColumn());
-
+                    return new Token(TokenClass.INVALID, sb.toString(), scanner.getLine(), scanner.getColumn());
             }
-            scanner.next();
+            sb.append(scanner.next());
         }
         scanner.next();
-        return true;
+        return new Token(TokenClass.STRING_LITERAL, sb.toString(), scanner.getLine(), scanner.getColumn());
     }
 
     private boolean isFollowedByInclude() throws IOException {
@@ -214,15 +205,25 @@ public class Tokeniser {
         return true;
     }
 
-    private Token handleWordsAndIdentifiers(char c) throws IOException {
-        String str = String.valueOf(c);
-        while(str.length() > 6) {
-            str += String.valueOf(scanner.peek());
-            if(mapStringToToken(str) != null)
-                return new Token(mapStringToToken(str), scanner.getLine(), scanner.getColumn());
+    private Token handleWordsAndIdentifiers(char c, int line, int column) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        sb.append(c);
+        while(sb.length() < 6 && Character.isLetter(scanner.peek())) {
+            sb.append(scanner.next());
+            if(mapStringToToken(sb.toString()) != null)
+                return new Token(mapStringToToken(sb.toString()), line, column);
         }
-        traverseIdentifiers();
-        return new Token(TokenClass.IDENTIFIER, scanner.getLine(), scanner.getColumn());
+        sb = traverseIdentifiers(sb);
+        return new Token(TokenClass.IDENTIFIER, sb.toString(), line, column);
+    }
+
+    private StringBuilder traverseIdentifiers(StringBuilder sb) throws IOException {
+        char nextChar = scanner.peek();
+        while (Character.isDigit(nextChar) || Character.isLetter(nextChar) || nextChar == '_') {
+            sb.append(scanner.next());
+            nextChar = scanner.peek();
+        }
+        return sb;
     }
 
     private TokenClass mapStringToToken(String str) {
