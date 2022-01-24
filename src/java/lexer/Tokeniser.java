@@ -89,7 +89,7 @@ public class Tokeniser {
             }
             if( scanner.peek() == '*') {
                 scanner.next();
-                while( scanner.next() != '*' && scanner.peek() == '/');
+                while( scanner.next() != '*' || scanner.peek() != '/');
                 scanner.next();
                 return next();
             }
@@ -174,6 +174,7 @@ public class Tokeniser {
 
     private Token handleStringLiteral() throws IOException {
         StringBuilder sb = new StringBuilder();
+        Token failure = null;
         while (scanner.peek() != '"') {
             if (scanner.peek() == '\n') {
                 error(scanner.peek(), scanner.getLine(), scanner.getColumn());
@@ -181,15 +182,37 @@ public class Tokeniser {
             }
 
             if (scanner.peek() == '\\') { //TODO
-                sb.append(scanner.next());
-                if(!escapableCharacters.contains(scanner.peek()))
-                    error(scanner.peek(), scanner.getLine(), scanner.getColumn());
-                    return new Token(TokenClass.INVALID, sb.toString(), scanner.getLine(), scanner.getColumn());
+                scanner.next();
+                char nextChar = scanner.next();
+                char escapeChar = mapCharToEscapeChar(nextChar);
+                if(escapeChar == '!') {
+                    error(nextChar, scanner.getLine(), scanner.getColumn());
+                    failure = new Token(TokenClass.INVALID, "\\" + nextChar, scanner.getLine(), scanner.getColumn());
+                }
+                sb.append(escapeChar);
+                continue;
             }
             sb.append(scanner.next());
         }
         scanner.next();
+        if(failure != null)
+            return failure;
         return new Token(TokenClass.STRING_LITERAL, sb.toString(), scanner.getLine(), scanner.getColumn());
+    }
+
+    private char mapCharToEscapeChar(char c) {
+        switch (c) {
+            case 't': return '\t';
+            case 'b': return '\b';
+            case 'n': return '\n';
+            case 'r': return '\r';
+            case 'f': return '\f';
+            case '\'': return '\'';
+            case '"': return '"';
+            case '\\': return '\\';
+            case '0': return '\0';
+            default: return '!'; //Placeholder for wrong
+        }
     }
 
     private boolean isFollowedByInclude() throws IOException {
@@ -244,7 +267,15 @@ public class Tokeniser {
 
     private void goToNextSpaceOrNewLine() throws IOException {
         char nextChar = scanner.peek();
-        while (!Character.isWhitespace(nextChar) || nextChar != '\n') {
+        while (!Character.isWhitespace(nextChar)) {
+            scanner.next();
+        }
+        scanner.next();
+    }
+
+    private void goToNewLine() throws IOException {
+        char nextChar = scanner.peek();
+        while (nextChar != '\n') {
             scanner.next();
         }
         scanner.next();
