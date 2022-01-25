@@ -14,7 +14,7 @@ public class Tokeniser {
 
     private Scanner scanner;
 
-    private List<char[]> escapableCharacters = Arrays.asList("tbnrf'\"\\".toCharArray());
+    private List<char[]> escapableCharacters = Arrays.asList("tbnrf0'\"\\".toCharArray());
 
     private int error = 0;
     public int getErrorCount() {
@@ -72,10 +72,6 @@ public class Tokeniser {
             scanner.next();
             return new Token(TokenClass.NE, line, column);
         }
-        if (c == '&' && scanner.peek() == '&') {
-            scanner.next();
-            return new Token(TokenClass.LOGAND, line, column);
-        }
         if (c == '|' && scanner.peek() == '|') {
             scanner.next();
             return new Token(TokenClass.LOGOR, line, column);
@@ -116,15 +112,33 @@ public class Tokeniser {
             }
             return new Token(TokenClass.GT, line, column);
         }
-
+        if (c == '&') {
+            if(scanner.peek() == '&') {
+                scanner.next();
+                return new Token(TokenClass.LOGAND, line, column);
+            }
+            return new Token(TokenClass.AND, line, column);
+        }
         // Dynamic lengths
         if (c == '#' && isFollowedByInclude()) {
             return new Token(TokenClass.INCLUDE, line, column);
         }
         if (c == '\'') { //TODO
-            scanner.next();
+            char nextChar = scanner.next();
+            if(nextChar == '\\') {
+                nextChar = scanner.next();
+                char escapeChar = mapCharToEscapeChar(nextChar);
+                if(escapeChar == '!') {
+                    error(nextChar, line, column);
+                    if(scanner.peek() == '\'')
+                        scanner.next();
+                    return new Token(TokenClass.INVALID, "\\" + nextChar, scanner.getLine(), scanner.getColumn());
+                }
+                return new Token(TokenClass.CHAR_LITERAL, Character.toString(nextChar), line, column);
+            }
+
             if(scanner.next() == '\'')
-                return new Token(TokenClass.CHAR_LITERAL, line, column);
+                return new Token(TokenClass.CHAR_LITERAL, Character.toString(nextChar), line, column);
         }
         if (c == '"') {
             return handleStringLiteral();
@@ -149,7 +163,6 @@ public class Tokeniser {
             case '-': return new Token(TokenClass.MINUS, line, column);
             case '*': return new Token(TokenClass.ASTERIX, line, column);
             case '%': return new Token(TokenClass.REM, line, column);
-            case '&': return new Token(TokenClass.AND, line, column);
             case '{': return new Token(TokenClass.LBRA, line, column);
             case '}': return new Token(TokenClass.RBRA, line, column);
             case '(': return new Token(TokenClass.LPAR, line, column);
@@ -181,7 +194,7 @@ public class Tokeniser {
                 return new Token(TokenClass.INVALID, "\\n", scanner.getLine(), scanner.getColumn());
             }
 
-            if (scanner.peek() == '\\') { //TODO
+            if (scanner.peek() == '\\') {
                 scanner.next();
                 char nextChar = scanner.next();
                 char escapeChar = mapCharToEscapeChar(nextChar);
