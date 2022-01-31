@@ -47,6 +47,7 @@ exp        ::= "(" exp ")" exp'
 exp'        ::= binop exp
               | "[" exp "]" # Array access
               | "." IDENT   # Field access
+              | e           # Empty set
 
 binop        ::= ">" | "<" | ">=" | "<=" | "!=" | "==" | "+" | "-" | "/" | "*" | "%" | "||" | "&&"   # binary operators
 op           ::= "-" | "+"
