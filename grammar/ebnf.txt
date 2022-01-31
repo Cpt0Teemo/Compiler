@@ -33,24 +33,16 @@ assign     ::= "=" exp ";"
 
 block      ::= "{" (vardecl)* (stmt)* "}"
 
-exp        ::= "(" exp ")"
-             | (IDENT | INT_LITERAL)
-             | op exp
-             | CHAR_LITERAL
-             | STRING_LITERAL
-             | exp binop exp
-             | arrayaccess | fieldaccess | valueat | addressof | funcall | sizeof | typecast
-
-exp        ::= "(" exp ")" stmt'
-             | (IDENT | INT_LITERAL) stmt'
-             | op exp stmt'
-             | CHAR_LITERAL stmt'
-             | STRING_LITERAL stmt'
-             | valueat stmt'
-             | addressof stmt'
-             | funcall stmt'
-             | sizeof stmt'
-             | typecast stmt'
+exp        ::= "(" exp ")" exp'
+             | (IDENT | INT_LITERAL) exp'
+             | op exp exp'
+             | CHAR_LITERAL exp'
+             | STRING_LITERAL exp'
+             | valueat exp'
+             | addressof exp'
+             | funcall exp'
+             | sizeof exp'
+             | typecast exp'
 
 exp'        ::= binop exp
               | "[" exp "]" # Array access
