@@ -115,6 +115,7 @@ public class Parser {
         }
 
         error(expected);
+        nextToken();
         return null;
     }
 
@@ -311,6 +312,7 @@ public class Parser {
                         }
                     }
                     expect(TokenClass.RPAR);
+                    parseExpPrime();
                     return;
                 } else {
                     parseExpPrime();
@@ -343,7 +345,8 @@ public class Parser {
                 parseType();
                 expect(TokenClass.RPAR);
                 return;
-            default: error(expStartArray);
+            default:
+                error(expStartArray);
         }
     }
 
