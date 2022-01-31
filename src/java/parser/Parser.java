@@ -347,7 +347,7 @@ public class Parser {
     }
 
     private void parseExpPrime() {
-        if(accept(TokenClass.RSBR)) {
+        if(accept(TokenClass.LSBR)) {
             nextToken();
             parseExp();
             expect(TokenClass.RSBR);
