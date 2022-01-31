@@ -26,22 +26,40 @@ stmt       ::= block
              | "while" "(" exp ")" stmt              # while loop
              | "if" "(" exp ")" stmt ["else" stmt]   # if then else
              | "return" [exp] ";"                    # return
-             | exp "=" exp ";"                       # assignment
-             | exp ";"                               # expression statement, e.g. a function call
+             | exp stmt'                              # expression/assignment statement, e.g. a function call
+
+stmt'      ::= assign | ";"
+assign     ::= "=" exp ";"
 
 block      ::= "{" (vardecl)* (stmt)* "}"
 
 exp        ::= "(" exp ")"
              | (IDENT | INT_LITERAL)
-             | ("-" | "+") exp
+             | op exp
              | CHAR_LITERAL
              | STRING_LITERAL
-             | exp (">" | "<" | ">=" | "<=" | "!=" | "==" | "+" | "-" | "/" | "*" | "%" | "||" | "&&") exp  # binary operators
+             | exp binop exp
              | arrayaccess | fieldaccess | valueat | addressof | funcall | sizeof | typecast
 
+exp        ::= "(" exp ")" stmt'
+             | (IDENT | INT_LITERAL) stmt'
+             | op exp stmt'
+             | CHAR_LITERAL stmt'
+             | STRING_LITERAL stmt'
+             | valueat stmt'
+             | addressof stmt'
+             | funcall stmt'
+             | sizeof stmt'
+             | typecast stmt'
+
+exp'        ::= binop exp
+              | "[" exp "]" # Array access
+              | "." IDENT   # Field access
+
+binop        ::= ">" | "<" | ">=" | "<=" | "!=" | "==" | "+" | "-" | "/" | "*" | "%" | "||" | "&&"   # binary operators
+op           ::= "-" | "+"
+
 funcall      ::= IDENT "(" [ exp ("," exp)* ] ")" # function call
-arrayaccess  ::= exp "[" exp "]"                  # array access
-fieldaccess  ::= exp "." IDENT                    # structure field member access
 valueat      ::= "*" exp                          # Value at operator (pointer indirection)
 addressof    ::= "&" exp                          # Address-of operator
 sizeof       ::= "sizeof" "(" type ")"            # size of type
