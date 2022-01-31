@@ -44,9 +44,9 @@ exp        ::= "(" exp ")" exp'
              | sizeof exp'
              | typecast exp'
 
-exp'        ::= binop exp
-              | "[" exp "]" # Array access
-              | "." IDENT   # Field access
+exp'        ::= binop exp exp'
+              | "[" exp "]" exp' # Array access
+              | "." IDENT exp'  # Field access
               | e           # Empty set
 
 binop        ::= ">" | "<" | ">=" | "<=" | "!=" | "==" | "+" | "-" | "/" | "*" | "%" | "||" | "&&"   # binary operators

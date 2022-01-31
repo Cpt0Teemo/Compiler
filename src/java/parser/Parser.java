@@ -295,12 +295,13 @@ public class Parser {
                     parseExp();
                     return;
                 } else {
-                    parseExpPrime();
+                    parseExp();
                     expect(TokenClass.RPAR);
+                    parseExpPrime();
                     return;
                 }
             case IDENTIFIER:
-                if(accept(TokenClass.LPAR)) {
+                if(accept(TokenClass.LPAR)) { //Function call
                     nextToken();
                     if(!accept(TokenClass.RPAR)) {
                         parseExp();
@@ -351,14 +352,17 @@ public class Parser {
             nextToken();
             parseExp();
             expect(TokenClass.RSBR);
+            parseExpPrime();
             return;
         } else if (accept(TokenClass.DOT)) {
             nextToken();
             expect(TokenClass.IDENTIFIER);
+            parseExpPrime();
             return;
         } else if (binOperators.contains(token.tokenClass)) {
             nextToken();
             parseExp();
+            parseExpPrime();
             return;
         }
         //Empty set
