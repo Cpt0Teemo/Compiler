@@ -9,7 +9,7 @@ Your are highly encouraged to "watch" this repository for any changes.
 2. Part 2 (ast builder + semantic analyser): Friday, 25 February 2022 at 5pm, weight = 20%
 3. Part 3 (code generator): Friday, 18 March 2022, at 5pm, weight = 20%
 4. Part 4 (register allocator): Friday 8 April 2022, at 5pm, weight = 20%
-5. Part 4 (advanced topic): Friday 29 April 2022, at 5pm, weight = 20%
+5. Part 5 (advanced topic): Friday 29 April 2022, at 5pm, weight = 20%
 
 Specific instructions for each part can be found above by clicking on the part name.
 
@@ -29,7 +29,7 @@ If similar code is found between two (or more) students, we will not try to figu
 # Scoreboard #
 
 We automatically run a series of test programs using your compiler about twice a day.
-You can keep track of your progress and see how many tests pass/fail using the scoreboard (link to be posted).
+You can keep track of your progress and see how many tests pass/fail using the scoreboard (link will be available on the course website).
 The scoreboard **is provided as a best effort service**, do not rely on it as it may come down unexpectedly:no guarantees are offered.
 
 # Software requirements #
