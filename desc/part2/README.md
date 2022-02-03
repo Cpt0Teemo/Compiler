@@ -150,6 +150,19 @@ mystruct.field[1] // (mystruct.field)[1]
 &p[1]             // &(p[1])
 ```
 
+Note that associativity for unary operators seems at first a bit of an ill-defined concept.
+However, it is still a useful concept in order to exlain how the following examples should be interepreted.
+For instance, left-to-right associativity for function call tells you that if the following input was somehow valid syntactically (it is not in your language)
+```C
+foo()bar
+```
+then the call is taking place on foo and not on bar.
+However, for type casting, if the following was syntactically correct (it is not the case in our language):
+```C
+x(int)y
+```
+then the casting operator is applied on y and not on x.
+
 
 ## 2. AST Nodes
 
@@ -181,6 +194,7 @@ Using EBNF syntax, the output should be of the form: `AST_NODE_CLASS_NAME '(' [S
 * `y = 3*x;` should result in the following output: `Assign(VarExpr(y),BinOp(IntLiteral(3), MUL, VarExpr(x)))`.
 * `void foo() { return; }` should result in: `FunDecl(VOID, foo, Block(Return()))`.
 * `-x;` should result in: `BinOp(IntLiteral(0),SUB,VarExpr(x))`.
+* `-x*3;` should result in: `BinOp(BinOp(IntLiteral(0),SUB,VarExpr(x)),MUL,IntLiteral(3))`.
 * `-1` should result in `BinOp(IntLiteral(0),SUB,IntLiteral(1))`.
 * `2+3+4` should result in `BinOp(BinOp(IntLiteral(2), ADD, IntLiteral(3)), ADD, IntLiteral(4))`  (all binary operators are left associative in our language)
 * `2+3*4` should result in `BinOp(IntLiteral(2), ADD, BinOp(IntLiteral(3), MUL, IntLiteral(4))`  (multiplication has precedence over addition, see precedence table)
