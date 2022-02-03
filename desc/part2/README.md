@@ -118,8 +118,12 @@ As seen in the lecture, when building the AST it is important to ensure that the
 To this end, you should start again from the initial concrete syntax grammar and update it.
 
 You should make sure the resulting grammar is non-ambiguous, eliminate left recursion and ensure that the usual C precedence and associativity rules for operators are respected based on the table below.
-As see in the lecture, left-associative operators should be handled using an iterative approach in the parser (rather than recursion).
+
+As see in the lecture, left-associative binary operators should be handled using an iterative approach in the parser (rather than recursion).
 We suggest that you express these in the grammar using a Kleane closure, which will directly translate to a loop in your parser code.
+
+The associatibity of unary operators is discussed below, but since by definition they only act on a single argument, there is no need to implement any repetition mechanism (either recursive or iterative).
+However, you should ensure that precedence is encoded correctly by creating new non-terminals in the gramamr (if needed).
 
 
 | Precedence    |Operator       | Description       |Associativity  |
@@ -139,7 +143,7 @@ We suggest that you express these in the grammar using a Kleane closure, which w
 | 7             | &&            | Logical AND | Left-to-right |
 | 8             | ⎮⎮            | Logical OR | Left-to-right |
   
-For instance, here is how to "interpret" the following piece of C code:
+Here is how to "interpret" the following piece of C code based on precedence:
  
 ```C
 array[1][2]       // (array[1])[2]
@@ -151,17 +155,17 @@ mystruct.field[1] // (mystruct.field)[1]
 ```
 
 Note that associativity for unary operators seems at first a bit of an ill-defined concept.
-However, it is still a useful concept in order to exlain how the following examples should be interepreted.
-For instance, left-to-right associativity for function call tells you that if the following input was somehow valid syntactically (it is not in your language)
+However, it is still a useful concept that basically specifies whether the operator is used as *prefix* or *postfix*.
+For instance, left-to-right associativity for function call tells you that if the following input were somehow valid syntactically (it is not in your language)
 ```C
 foo()bar
 ```
-then the call is taking place on foo and not on bar.
-However, for type casting, if the following was syntactically correct (it is not the case in our language):
+then the call would be taking place on `foo` and not on `bar`.
+However, for type casting, if the following were syntactically correct (it is not the case in our language):
 ```C
 x(int)y
 ```
-then the casting operator is applied on y and not on x.
+then the casting operator would be applied on `y` and not on `x`.
 
 
 ## 2. AST Nodes
