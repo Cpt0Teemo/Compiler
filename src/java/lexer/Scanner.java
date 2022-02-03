@@ -11,7 +11,7 @@ public class Scanner {
     private int peeked = -1;
 
     private int line = 1;
-    private int column = 0;
+    private int column = 1;
 
     public Scanner(File source) throws FileNotFoundException {
         input = new BufferedReader(new FileReader(source));
@@ -51,9 +51,9 @@ public class Scanner {
             r = (char) i;
         }
 
-        if (r == '\n' || r == '\r') {
+        if (r == '\n') {
             line++;
-            column =0;
+            column = 1;
         } else {
             column++;
         }
