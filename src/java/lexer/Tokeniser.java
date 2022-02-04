@@ -15,6 +15,7 @@ public class Tokeniser {
     private Scanner scanner;
 
     private List<char[]> escapableCharacters = Arrays.asList("tbnrf0'\"\\".toCharArray());
+    private boolean parsing = false;
 
     private int error = 0;
     public int getErrorCount() {
@@ -37,6 +38,12 @@ public class Tokeniser {
              result = next();
         } catch (EOFException eof) {
             // end of file, nothing to worry about, just return EOF token
+            if(parsing) {
+                int line = scanner.getLine();
+                int column = scanner.getColumn();
+                error('\0', line, column);
+                return new Token(TokenClass.INVALID, line, column);
+            }
             return new Token(TokenClass.EOF, scanner.getLine(), scanner.getColumn());
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -56,12 +63,14 @@ public class Tokeniser {
         int column = scanner.getColumn();
 
         // get the next character
+        parsing = false;
         char c = scanner.next();
 
         // skip white spaces
         if (Character.isWhitespace(c))
             return next();
 
+        parsing = true;
         // Simple single characters
         Token result = checkSimpleSingleCharacters(c);
         if(result != null)
@@ -225,8 +234,9 @@ public class Tokeniser {
             if(c == scanner.peek())
                 scanner.next();
             else {
+                char error = scanner.peek();
                 goToNextSpaceOrNewLine();
-                error(c, line, column);
+                error(error, line, column);
                 return new Token(TokenClass.INVALID, "#", line, column);
             }
         }
@@ -286,11 +296,16 @@ public class Tokeniser {
     }
 
     private void goToNextSpaceOrNewLine() throws IOException {
-        char nextChar = scanner.peek();
-        while (!Character.isWhitespace(nextChar)) {
+        try {
+            char nextChar = scanner.peek();
+            while (!Character.isWhitespace(nextChar)) {
+                scanner.next();
+                nextChar = scanner.peek();
+            }
             scanner.next();
+        } catch (EOFException e) {
+            return;
         }
-        scanner.next();
     }
 
 }
