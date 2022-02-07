@@ -197,8 +197,9 @@ Using EBNF syntax, the output should be of the form: `AST_NODE_CLASS_NAME '(' [S
 
 * `y = 3*x;` should result in the following output: `Assign(VarExpr(y),BinOp(IntLiteral(3), MUL, VarExpr(x)))`.
 * `void foo() { return; }` should result in: `FunDecl(VOID, foo, Block(Return()))`.
-* `-x;` should result in: `BinOp(IntLiteral(0),SUB,VarExpr(x))`.
-* `-x*3;` should result in: `BinOp(BinOp(IntLiteral(0),SUB,VarExpr(x)),MUL,IntLiteral(3))`.
+* `+x` should result in just `VarExpr(x)`
+* `-x` should result in: `BinOp(IntLiteral(0),SUB,VarExpr(x))`.
+* `-x*3` should result in: `BinOp(BinOp(IntLiteral(0),SUB,VarExpr(x)),MUL,IntLiteral(3))`.
 * `-1` should result in `BinOp(IntLiteral(0),SUB,IntLiteral(1))`.
 * `2+3+4` should result in `BinOp(BinOp(IntLiteral(2), ADD, IntLiteral(3)), ADD, IntLiteral(4))`  (all binary operators are left associative in our language)
 * `2+3*4` should result in `BinOp(IntLiteral(2), ADD, BinOp(IntLiteral(3), MUL, IntLiteral(4))`  (multiplication has precedence over addition, see precedence table)
@@ -208,6 +209,8 @@ Using EBNF syntax, the output should be of the form: `AST_NODE_CLASS_NAME '(' [S
 Note that you are free to add white spaces in your output format; spaces, newlines and tabulations will be ignore by our comparison tool.
 
 See the file [fibonacci.c-ast-dump](./fibonacci.c-ast-dump) for an example output of `java -cp bin Main -ast tests/fibonacci.c fibonacci.c-ast-dump`.
+
+Note that we represent the `-` unary operator using a `BinOp` AST node, whereas the `+` unary operator is simply ignored.
 
 ## 4'. Dot Printer (Optional)
 
