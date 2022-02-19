@@ -1,11 +1,16 @@
 package parser;
 
-
+import ast.FunDecl;
+import ast.Program;
+import ast.StructTypeDecl;
+import ast.VarDecl;
 import lexer.Token;
 import lexer.Token.TokenClass;
 import lexer.Tokeniser;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
 
 /**
@@ -19,6 +24,7 @@ public class Parser {
     private Queue<Token> buffer = new LinkedList<>();
 
     private final Tokeniser tokeniser;
+
 
     private List<TokenClass> types = List.of(TokenClass.INT, TokenClass.CHAR, TokenClass.VOID, TokenClass.STRUCT);
     private TokenClass[] typesArray = types.toArray(TokenClass[]::new);
@@ -35,11 +41,11 @@ public class Parser {
         this.tokeniser = tokeniser;
     }
 
-    public void parse() {
+    public Program parse() {
         // get the first token
         nextToken();
 
-        parseProgram();
+        return parseProgram();
     }
 
     public int getErrorCount() {
@@ -130,12 +136,13 @@ public class Parser {
     }
 
 
-    private void parseProgram() {
+    private Program parseProgram() {
         parseIncludes();
-        parseStructDecls();
-        parseVarDecls(false);
-        parseFunDecls();
+        List<StructTypeDecl> stds = parseStructDecls();
+        List<VarDecl> vds = parseVarDecls(false);
+        List<FunDecl> fds = parseFunDecls();
         expect(TokenClass.EOF);
+        return new Program(stds, vds, fds);
     }
 
     // includes are ignored, so does not need to return an AST node
@@ -147,7 +154,7 @@ public class Parser {
         }
     }
 
-    private void parseStructDecls() {
+    private List<StructTypeDecl> parseStructDecls() {
        if (accept(TokenClass.STRUCT)) {
            nextToken();
            expect(TokenClass.IDENTIFIER);
@@ -158,9 +165,10 @@ public class Parser {
 
            parseStructDecls();
        }
+       return null; //TODO
     }
 
-    private void parseVarDecls(boolean atLeastOne) {
+    private List<VarDecl> parseVarDecls(boolean atLeastOne) {
         int horizon = 2;
         if(token.tokenClass == TokenClass.STRUCT)
             horizon = 3;
@@ -186,9 +194,10 @@ public class Parser {
         } else if (atLeastOne) {
             error(TokenClass.INT, TokenClass.CHAR, TokenClass.VOID, TokenClass.STRUCT);
         }
+        return null; //TODO
     }
 
-    private void parseFunDecls() {
+    private List<FunDecl> parseFunDecls() {
         if (lookAhead(2).tokenClass == TokenClass.LPAR) {
             parseType();
             expect(TokenClass.IDENTIFIER);
@@ -198,6 +207,7 @@ public class Parser {
             parseBlock();
             parseFunDecls();
         }
+        return null; //TODO
     }
 
     private void parseType() {

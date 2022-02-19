@@ -5,11 +5,10 @@ Your are highly encouraged to "watch" this repository for any changes.
 
 # Deadlines #
 
-1. [Part 1 (parser)](desc/part1/): Friday, 4 February 2022 at 5pm, weight = 20%
-2. Part 2 (ast builder + semantic analyser): Friday, 25 February 2022 at 5pm, weight = 20%
-3. Part 3 (code generator): Friday, 18 March 2022, at 5pm, weight = 20%
-4. Part 4 (register allocator): Friday 8 April 2022, at 5pm, weight = 20%
-5. Part 5 (advanced topic): Friday 29 April 2022, at 5pm, weight = 20%
+1. [Part 1 (parser)](desc/part1/), Friday 5 February 2021 at 5pm, weight = 20%
+2. [Part 2 (ast builder + semantic analyser)](desc/part2), Friday 26 February 2021 at 5pm, weight = 20%
+3. [Part 3 (code generator)](desc/part3), Friday 19 March 2021, at 5pm, weight = 25%
+4. [Part 4 (register allocator)](desc/part4), Wednesday 14 April 2021, at 5pm, weight = 25%
 
 Specific instructions for each part can be found above by clicking on the part name.
 
@@ -29,7 +28,7 @@ If similar code is found between two (or more) students, we will not try to figu
 # Scoreboard #
 
 We automatically run a series of test programs using your compiler about twice a day.
-You can keep track of your progress and see how many tests pass/fail using the scoreboard (link will be available on the course website).
+You can keep track of your progress and see how many tests pass/fail using the [scoreboard](https://www.cs.mcgill.ca/~cs520/2021/scoreboard/).
 The scoreboard **is provided as a best effort service**, do not rely on it as it may come down unexpectedly:no guarantees are offered.
 
 # Software requirements #
@@ -90,9 +89,9 @@ In case of doubt, ask us on the online forum.
 For all parts of the coursework, the marking will be a function of the number of successful tests as shown in the scoreboard and a series of hidden tests.
 
 
-## Score
+## Parts 1-4
 2/3 (66.6%) of the mark will be determined by the scoreboard tests and 1/3 (33.3%) will be determined by the hidden tests.
-You will get 1 point for each passing test, and -1 for each failing test (only for the lexer, parser and semantic analysis components).
+You will get 1 point for each passing test and -1 for each failing test (only for the lexer, parser and semantic analysis components).
 Then, the mark is calculated by dividing the number of points achieved by the number of tests.
 The hidden tests are marked independently from the visible ones.
 
@@ -104,15 +103,14 @@ Although we do not mark you on the tests you will create for testing your own co
 If we find students that do not have any tests (or very few), and they managed to pass most of our tests, this will raise suspicion that this might be a case of academic misconduct.
 Also make sure that you do not share your tests as they should be written by yourself alone (we will run plagiarism detection software on all the code, including the tests, that are in your repository).
 
-
 # Setup #
 
 ## Register your student id and name
 
-First, we will need you fill up [this form](https://forms.office.com/r/eV7X8dmNq2)
+First, we will need you fill up [this google form](https://forms.gle/CFndmUYxZpJ8xYPAA)
 in order for us to register you for the automarking.
 If you are not registered, we won't be able to mark you.
-Also please make sure to keep `comp520-coursework-w2022` as your repository name, otherwise the automarer will fail and you will receive a zero.
+Also please make sure to keep `comp520-coursework-w2021` as your repository name, otherwise automarking will fail.
 
 ## GitLab ##
 We will rely on gitlab and it is mandatory to use it for this coursework.
@@ -141,13 +139,13 @@ Then, make the repository private
 
 ![Making repository private](/figures/gl_private3.png "Making repository private.")
 
-Now, grant access to the teaching staff (note that the *Members* submenu is now found under *Project information*):
+Now, grant access to the teaching staff
 
 ![Granting the teaching staff read access](/figures/gl_permissions1.png "Granting the teaching staff read access.")
 
 You should grant the following users *Reporter* access:
   * Christophe DUBACH (username: cdubach)
-  * Shakiba Bolbolian Khah MAI (username: sbolbo)
+  * Jacob MAI (username: mpeng5)
   * Jonathan VAN DER CRUYSSE (username: jvande50)
 
 Next, you will have to clone the forked repository to your local machine. You can clone the repository using either HTTPS or SSH.
@@ -158,7 +156,7 @@ requires you to enter your CS account username and password. If in doubt, HTTPS 
 In order to clone the repository via SSH you should ensure that you've uploaded a private key to GitLab, launch a terminal, and type:
 
 ```
-$ git clone git@gitlab.cs.mcgill.ca:XXXXXXXX/comp520-coursework-w2022.git
+$ git clone git@gitlab.cs.mcgill.ca:XXXXXXXX/comp520-coursework-w2021.git
 ```
 
 where XXXXXXXX is your CS gitlab account id.
@@ -166,7 +164,7 @@ where XXXXXXXX is your CS gitlab account id.
 In order to clone the repository via HTTPS you should launch a terminal and type:
 
 ```
-$ git clone https://gitlab.cs.mcgill.ca/XXXXXXXX/comp520-coursework-w2022.git
+$ git clone https://gitlab.cs.mcgill.ca/XXXXXXXX/comp520-coursework-w2021.git
 ```
 
 where XXXXXXX is your CS  gitlab account id as above, and you should be prompted to type in your CS gitlab account id and password.
@@ -258,74 +256,3 @@ We suggest you follow the excelent [tutorial](https://www.atlassian.com/git/tuto
 
 * [add and commit](https://www.atlassian.com/git/tutorials/saving-changes)
 * [push](https://www.atlassian.com/git/tutorials/syncing/git-push)
-
-
-## Unit testing
-
-We have setup the build.xml in a way that should allow you to use unit testing easily.
-
-You should be able to add a src/test directory (that is, a directory named test right inside the src directory) and have these files ignored by ant (and thus ignored by the automarker).
-The purpose of this directory is for you to be able to add unit tests to verify your code.
-Files in this directory will be permitted to use any external libraries, but please ensure that no part of the compiler itself uses any external libraries as this is not allowed.
-Note that unit tests are strictly optional and will not be evaluated, but are highly recommended!
-When writing compilers, having a good automated test suite is worth its weight in gold.
-
-Furthermore, do not modify the build.xml file yourself.
-The automarker will replace this file when it runs to ensure that your compiler builds without any external dependencies (or if you did modify your build.xml, be aware that it will be replaced by the automarker with the orignal one).
-
-
-## Use of Scala instead of Java
-
-If you wish to, you are allowed to use Scala instead of Java for implementing your compiler.
-However, we strongly encourage you to stick with Java if you are not already familiar with Scala.
-In particular, you will not benefit from the starter code we give you and may have to rewrite a portion of it in Scala.
-
-Note that we only support Scala version 2.11.12.
-
-### Building
-If the automarker detect the presence of a *build.sbt* file in the root folder, it will compile your sources with SBT (`sbt compile`).
-Note that to ensure that you are not using any third party libraries, we will replace the *build.sbt* with our own version whose content is:
- 
-```
-scalaVersion := "2.11.12"
-
-javacOptions ++= Seq(
-  "-source", "11",
-  "-target", "11"
-)
-
-compileOrder := CompileOrder.Mixed
-
-Compile / scalaSource := baseDirectory.value / "src/scala/"
-Compile / javaSource := baseDirectory.value / "src/java/"
-
-import scala.sys.process._
-
-lazy val cleanupTask = taskKey[Unit]("Now we will pretend we are Ant")
-
-import scala.sys.process._
-
-cleanupTask := ("rm -fr ./bin" #&& "cp -r ./target/scala-2.11/classes ./bin" !!)
-
-compile in Compile := Def.taskDyn {
-  val result = (compile in Compile).value
-  Def.task {
-    val _ = cleanupTask.value
-    result
-  }
-}.value
-```
-
-As you can see, you should, therefore, place your scala sources into the `src/scala` folder.
-
-### Main.java
-If you have a Main.java file in your source at the expected location, our automarker will replace it with our own version which is identical to the one we gave you originally, and will compile it!
-So if you wish to have a Main.scala source file as your main entry point, you should make sure to remove Main.java from your repo.
-Otherwise you will end up with two Main classes and nothing will work with the automarker.
-
-### Running your compiler
-
-To run your compiler, the automarker uses the following command:
-
-`java -cp bin/:PATH_TO/scala-compiler-2.11.12.jar:PATH_TO/scala-library-2.11.12.jar:PATH_TO/scala-reflect-2.11.12.jar Main`
-
