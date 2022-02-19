@@ -16,11 +16,11 @@ public class Test {
         Register v1 = new Register.Virtual();
         Register v2 = new Register.Virtual();
         Register v3 = new Register.Virtual();
-        text.emit(AssemblyItem.Instruction.pushRegisters);
-        text.emit("addi", v1, Register.Arch.zero, 4);
-        text.emit("addi", v2, Register.Arch.zero, 8);
-        text.emit("add", v3, v1, v2);
-        text.emit(AssemblyItem.Instruction.popRegisters);
+        text.emit(AssemblyItem.Intrinsic.pushRegisters);
+        text.emit(AssemblyItem.IInstruction.OpCode.ADDI, v1, Register.Arch.zero, 4);
+        text.emit(AssemblyItem.IInstruction.OpCode.ADDI, v2, Register.Arch.zero, 8);
+        text.emit(AssemblyItem.RInstruction.OpCode.ADD, v3, v1, v2);
+        text.emit(AssemblyItem.Intrinsic.popRegisters);
 
         try {
             PrintWriter writer = new PrintWriter("t1.asm");

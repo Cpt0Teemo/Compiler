@@ -23,32 +23,32 @@ public class AssemblyProgram {
             items.add(instruction);
         }
 
-        public void emit(String opcode, Register dst, Register src1, Register src2) {
+        public void emit(AssemblyItem.RInstruction.OpCode opcode, Register dst, Register src1, Register src2) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.RInstruction(opcode, dst, src1, src2));
+            items.add(new AssemblyItem.RInstruction(opcode, dst, src1, src2));
         }
 
-        public void emit(String opcode, Register src1, Register src2, AssemblyItem.Label label) {
+        public void emit(AssemblyItem.Branch.OpCode opcode, Register src1, Register src2, AssemblyItem.Label label) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.Branch(opcode, src1, src2, label));
+            items.add(new AssemblyItem.Branch(opcode, src1, src2, label));
         }
 
-        public void emit(String opcode, Register dst, Register src, int imm) {
+        public void emit(AssemblyItem.IInstruction.OpCode opcode, Register dst, Register src, int imm) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.IInstruction(opcode, dst, src, imm));
+            items.add(new AssemblyItem.IInstruction(opcode, dst, src, imm));
         }
 
-        public void emitLA(Register dst, AssemblyItem.Label label) {
+        public void emitLoadAddress(Register dst, AssemblyItem.Label label) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.LA(dst, label));
+            items.add(new AssemblyItem.LoadAddress(dst, label));
         }
 
-        public void emitLoad(String opcode, Register val, Register addr, int imm) {
+        public void emitLoad(AssemblyItem.Load.OpCode opcode, Register val, Register addr, int imm) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.Load(opcode, val, addr, imm));
+            items.add(new AssemblyItem.Load(opcode, val, addr, imm));
         }
 
-        public void emitStore(String opcode, Register val, Register addr, int imm) {
+        public void emitStore(AssemblyItem.Store.OpCode opcode, Register val, Register addr, int imm) {
             assert this.type == Type.TEXT;
             items.add(new AssemblyItem.Instruction.Store(opcode, val, addr, imm));
         }
@@ -79,7 +79,7 @@ public class AssemblyProgram {
                     item.accept(new AssemblyItemVisitor() {
 
                         public void visitComment(AssemblyItem.Comment comment) {
-                            writer.println("# "+comment);
+                            writer.println(comment);
                         }
                         public void visitLabel(AssemblyItem.Label label) {
                             writer.println(label + ":");

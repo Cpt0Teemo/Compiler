@@ -56,8 +56,8 @@ public class NaiveRegAlloc {
             if (reg.isVirtual()) {
                 Register tmp = vrToAr.get(reg);
                 AssemblyItem.Label label = vrMap.get(reg);
-                section.emitLA(tmp, label);
-                section.emitLoad("lw", tmp, tmp, 0);
+                section.emitLoadAddress(tmp, label);
+                section.emitLoad(AssemblyItem.Load.OpCode.LW, tmp, tmp, 0);
             }
         });
 
@@ -70,8 +70,8 @@ public class NaiveRegAlloc {
                 Register tmpAddr = freeTempRegs.remove(0);
                 AssemblyItem.Label label = vrMap.get(insn.def());
 
-                section.emitLA(tmpAddr, label);
-                section.emitStore("sw", tmpVal, tmpAddr, 0);
+                section.emitLoadAddress(tmpAddr, label);
+                section.emitStore(AssemblyItem.Store.OpCode.SW, tmpVal, tmpAddr, 0);
             }
         }
     }
@@ -118,27 +118,27 @@ public class NaiveRegAlloc {
                             }
                             public void visitInstruction(AssemblyItem.Instruction insn) {
 
-                                if (insn == AssemblyItem.Instruction.pushRegisters) {
+                                if (insn == AssemblyItem.Intrinsic.pushRegisters) {
                                     newSection.emit("Original instruction: pushRegisters");
                                     for (AssemblyItem.Label l : vrLabels) {
                                         // load content of memory at label into $t0
-                                        newSection.emitLA(Register.Arch.t0, l);
-                                        newSection.emitLoad("lw", Register.Arch.t0, Register.Arch.t0, 0);
+                                        newSection.emitLoadAddress(Register.Arch.t0, l);
+                                        newSection.emitLoad(AssemblyItem.Load.OpCode.LW, Register.Arch.t0, Register.Arch.t0, 0);
 
                                         // push $t0 onto stack
-                                        newSection.emit("addi", Register.Arch.sp, Register.Arch.sp, -4);
-                                        newSection.emitStore("sw", Register.Arch.t0, Register.Arch.sp, 0);
+                                        newSection.emit(AssemblyItem.IInstruction.OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
+                                        newSection.emitStore(AssemblyItem.Store.OpCode.SW, Register.Arch.t0, Register.Arch.sp, 0);
                                     }
-                                } else if (insn == AssemblyItem.Instruction.popRegisters) {
+                                } else if (insn == AssemblyItem.Intrinsic.popRegisters) {
                                     newSection.emit("Original instruction: popRegisters");
                                     for (AssemblyItem.Label l : reverseVrLabels) {
                                         // pop from stack into $t0
-                                        newSection.emitLoad("lw", Register.Arch.t0, Register.Arch.sp, 0);
-                                        newSection.emit("addi", Register.Arch.sp, Register.Arch.sp, 4);
+                                        newSection.emitLoad(AssemblyItem.Load.OpCode.LW, Register.Arch.t0, Register.Arch.sp, 0);
+                                        newSection.emit(AssemblyItem.IInstruction.OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, 4);
 
                                         // store content of $t0 in memory at label
-                                        newSection.emitLA(Register.Arch.t1, l);
-                                        newSection.emitStore("sw", Register.Arch.t0, Register.Arch.t1, 0);
+                                        newSection.emitLoadAddress(Register.Arch.t1, l);
+                                        newSection.emitStore(AssemblyItem.Store.OpCode.SW, Register.Arch.t0, Register.Arch.t1, 0);
                                     }
                                 } else
                                     emitInstructionWithoutVirtualRegister(insn, vrMap, newSection);
