@@ -238,7 +238,43 @@ public abstract class AssemblyItem {
             }
         }
 
+        /**
+         * A J-type instruction, which consists of an opcode and an address operand, encoded as a {@link Label}.
+         */
+        public static class JInstruction extends Instruction {
+            /**
+             * The J-type instruction's address operand, encoded as a label.
+             */
+            public final Label label;
 
+            /**
+             * Creates a new J-type instruction from an opcode and a label.
+             * @param opcode The opcode that defines the type of the instruction.
+             * @param label The label that serves as the address operand of the instruction.
+             */
+            public JInstruction(String opcode, Label label) {
+                super(opcode);
+                this.label = label;
+            }
+
+            @Override
+            public Register def() {
+                return null;
+            }
+
+            @Override
+            public List<Register> uses() {
+                return List.of();
+            }
+
+            @Override
+            public Instruction rebuild(Map<Register, Register> regMap) {
+                return this;
+            }
+
+            @Override
+            public String toString() { return opcode + " " + label; }
+        }
 
         public abstract static class MemIndirect extends Instruction {
             public final Register op1;
@@ -320,10 +356,6 @@ public abstract class AssemblyItem {
                 return new LA(regMap.getOrDefault(dst,dst),label);
             }
         }
-
-
-       // TODO: to complete
-
     }
 
     public static class Label extends AssemblyItem {
