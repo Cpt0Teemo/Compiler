@@ -1,7 +1,6 @@
 package gen.asm;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
@@ -16,8 +15,8 @@ public final class AssemblyParser {
      * @return An {@link AssemblyProgram} instance that corresponds to the text being read by {@code reader}.
      */
     public static AssemblyProgram readAssemblyProgram(final BufferedReader reader) {
-        var textDirective = new AssemblyItem.Directive("text");
-        var dataDirective = new AssemblyItem.Directive("data");
+        var textDirective = new Directive("text");
+        var dataDirective = new Directive("data");
 
         var program = new AssemblyProgram();
         AssemblyProgram.Section currentSection = null;
@@ -49,16 +48,6 @@ public final class AssemblyParser {
     }
 
     /**
-     * Reads an {@link AssemblyItem} from an input buffer.
-     * @param reader A buffered reader that reads lines of MIPS assembly code.
-     * @throws java.io.IOException If an I/O error occurs.
-     * @return An assembly item if the line read from the input buffer is nonempty; otherwise, {@code null}.
-     */
-    public static AssemblyItem readAssemblyItem(final BufferedReader reader) throws IOException {
-        return parseAssemblyItem(reader.readLine());
-    }
-
-    /**
      * Parses a string as an {@link AssemblyItem}.
      * @param line A single line of MIPS assembly.
      * @return An assembly item if the line is nonempty; otherwise, {@code null}.
@@ -73,17 +62,17 @@ public final class AssemblyParser {
         line = line.trim();
         if (line.startsWith("#")) {
             // Comments start with a hashtag.
-            return new AssemblyItem.Comment(line.substring(1).trim());
+            return new Comment(line.substring(1).trim());
         } else if (line.startsWith(".")) {
             // Directives start with a dot.
-            return new AssemblyItem.Directive(line.substring(1));
+            return new Directive(line.substring(1));
         } else if (line.endsWith(":")) {
             // Label definitions end with a colon and must be identifiers.
             String labelIdentifier = line.substring(0, line.length() - 1);
             if (!isLabel(labelIdentifier)) {
                 throw new Error("Expected a label identifier; found " + labelIdentifier);
             }
-            return AssemblyItem.Label.get(labelIdentifier);
+            return Label.get(labelIdentifier);
         } else {
             // Anything else must be an instruction. The general format for instructions is `opcode arg1, arg2, ...`.
             String[] opcodeAndArgs = line.split(" ", 2);
@@ -97,7 +86,7 @@ public final class AssemblyParser {
             var args = Arrays.stream(opcodeAndArgs[1].split(",")).map(String::trim).toList();
 
             // We now branch based on the opcode.
-            var op = AssemblyItem.Instruction.OpCode.tryParse(opcodeAndArgs[0].trim());
+            var op = OpCode.tryParse(opcodeAndArgs[0].trim());
             if (op.isEmpty())
             {
                 throw new Error("Ill-understood opcode " + opcodeAndArgs[0].trim());
@@ -108,34 +97,34 @@ public final class AssemblyParser {
             {
                 case LOAD_ADDRESS:
                     checkArity(args, 2, line);
-                    return new AssemblyItem.LoadAddress(parseRegister(args.get(0)), parseLabel(args.get(1)));
+                    return new Instruction.LoadAddress(parseRegister(args.get(0)), parseLabel(args.get(1)));
 
                 case CORE_ARITHMETIC:
                     checkArity(args, 3, line);
-                    return new AssemblyItem.CoreArithmetic(
-                            (AssemblyItem.CoreArithmetic.OpCode)opcode,
+                    return new Instruction.CoreArithmetic(
+                            (OpCode.CoreArithmetic)opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseRegister(args.get(2)));
 
                 case JUMP:
                     checkArity(args, 1, line);
-                    return new AssemblyItem.Jump(
-                            (AssemblyItem.Jump.OpCode)opcode,
+                    return new Instruction.Jump(
+                            (OpCode.Jump)opcode,
                             parseLabel(args.get(0)));
 
                 case BRANCH:
                     checkArity(args, 3, line);
-                    return new AssemblyItem.Branch(
-                            (AssemblyItem.Branch.OpCode)opcode,
+                    return new Instruction.Branch(
+                            (OpCode.Branch)opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseLabel(args.get(2)));
 
                 case ARITHMETIC_WITH_IMMEDIATE:
                     checkArity(args, 3, line);
-                    return new AssemblyItem.ArithmeticWithImmediate(
-                            (AssemblyItem.ArithmeticWithImmediate.OpCode)opcode,
+                    return new Instruction.ArithmeticWithImmediate(
+                            (OpCode.ArithmeticWithImmediate)opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseImmediate(args.get(2)));
@@ -143,8 +132,8 @@ public final class AssemblyParser {
                 case LOAD: {
                     checkArity(args, 2, line);
                     var memOperand = parseMemoryOperand(args.get(1));
-                    return new AssemblyItem.Load(
-                            (AssemblyItem.Load.OpCode) opcode,
+                    return new Instruction.Load(
+                            (OpCode.Load) opcode,
                             parseRegister(args.get(0)),
                             memOperand.getKey(),
                             memOperand.getValue());
@@ -153,27 +142,29 @@ public final class AssemblyParser {
                 case STORE:
                     checkArity(args, 2, line);
                     var memOperand = parseMemoryOperand(args.get(1));
-                    return new AssemblyItem.Store(
-                            (AssemblyItem.Store.OpCode) opcode,
+                    return new Instruction.Store(
+                            (OpCode.Store) opcode,
                             parseRegister(args.get(0)),
                             memOperand.getKey(),
                             memOperand.getValue());
 
                 case LOAD_UPPER_IMMEDIATE:
                     checkArity(args, 2, line);
-                    return new AssemblyItem.LoadUpperImmediate(
+                    return new Instruction.LoadUpperImmediate(
                             parseRegister(args.get(0)),
                             parseImmediate(args.get(1)));
 
-                case INTRINSIC:
-                    if (opcode == AssemblyItem.Intrinsic.OpCode.pushRegisters) {
-                        return AssemblyItem.Intrinsic.pushRegisters;
+                case NULLARY_INTRINSIC:
+                    if (opcode == OpCode.PUSH_REGISTERS) {
+                        return Instruction.NullaryIntrinsic.pushRegisters;
+                    } else if (opcode == OpCode.POP_REGISTERS) {
+                        return Instruction.NullaryIntrinsic.popRegisters;
                     } else {
-                        return AssemblyItem.Intrinsic.popRegisters;
+                        throw new Error("Cannot parse ill-understood intrinsic instruction " + line);
                     }
 
                 default:
-                    throw new Error();
+                    throw new Error("Cannot parse ill-understood instruction " + line);
             }
         }
     }
@@ -205,11 +196,11 @@ public final class AssemblyParser {
         }
     }
 
-    private static AssemblyItem.Label parseLabel(String name) {
+    private static Label parseLabel(String name) {
         if (!isLabel(name)) {
             throw new Error("Expected a label, got " + name);
         }
-        return AssemblyItem.Label.get(name);
+        return Label.get(name);
     }
 
     private static boolean isLabel(String text) {

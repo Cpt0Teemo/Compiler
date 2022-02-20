@@ -16,57 +16,73 @@ public class AssemblyProgram {
             this.type = type;
         }
 
-        public final List<AssemblyItem> items = new ArrayList<AssemblyItem>();
+        public final List<AssemblyItem> items = new ArrayList<>();
 
-        public void emit(AssemblyItem.Instruction instruction) {
+        public void emit(Instruction instruction) {
             assert this.type == Type.TEXT;
             items.add(instruction);
         }
 
-        public void emit(AssemblyItem.CoreArithmetic.OpCode opcode, Register dst, Register src1, Register src2) {
+        public void emit(OpCode.CoreArithmetic opcode, Register dst, Register src1, Register src2) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.CoreArithmetic(opcode, dst, src1, src2));
+            items.add(new Instruction.CoreArithmetic(opcode, dst, src1, src2));
         }
 
-        public void emit(AssemblyItem.Branch.OpCode opcode, Register src1, Register src2, AssemblyItem.Label label) {
+        public void emit(OpCode.Branch opcode, Register src1, Register src2, Label label) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Branch(opcode, src1, src2, label));
+            items.add(new Instruction.Branch(opcode, src1, src2, label));
         }
 
-        public void emit(AssemblyItem.ArithmeticWithImmediate.OpCode opcode, Register dst, Register src, int imm) {
+        public void emit(OpCode.ArithmeticWithImmediate opcode, Register dst, Register src, int imm) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.ArithmeticWithImmediate(opcode, dst, src, imm));
+            items.add(new Instruction.ArithmeticWithImmediate(opcode, dst, src, imm));
         }
 
-        public void emitLoadAddress(Register dst, AssemblyItem.Label label) {
+        public void emit(OpCode.LoadAddress ignoredOpcode, Register dst, Label label) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.LoadAddress(dst, label));
+            items.add(new Instruction.LoadAddress(dst, label));
         }
 
-        public void emitLoad(AssemblyItem.Load.OpCode opcode, Register val, Register addr, int imm) {
+        public void emit(OpCode.LoadUpperImmediate ignoredOpcode, Register dst, int immediate) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Load(opcode, val, addr, imm));
+            items.add(new Instruction.LoadUpperImmediate(dst, immediate));
         }
 
-        public void emitStore(AssemblyItem.Store.OpCode opcode, Register val, Register addr, int imm) {
+        public void emit(OpCode.Load opcode, Register val, Register addr, int imm) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.Store(opcode, val, addr, imm));
+            items.add(new Instruction.Load(opcode, val, addr, imm));
+        }
+
+        public void emit(OpCode.Store opcode, Register val, Register addr, int imm) {
+            assert this.type == Type.TEXT;
+            items.add(new Instruction.Store(opcode, val, addr, imm));
+        }
+
+        public void emit(OpCode.NullaryIntrinsic opcode) {
+            assert this.type == Type.TEXT;
+            if (opcode == OpCode.PUSH_REGISTERS) {
+                emit(Instruction.NullaryIntrinsic.pushRegisters);
+            } else if (opcode == OpCode.POP_REGISTERS) {
+                emit(Instruction.NullaryIntrinsic.popRegisters);
+            } else {
+                throw new Error("Cannot emit instruction for ill-understood intrinsic opcode " + opcode);
+            }
         }
 
 
-        public void emit(AssemblyItem.Label label){
+        public void emit(Label label){
             items.add(label);
         }
 
-        public void emit(AssemblyItem.Comment comment) {
+        public void emit(Comment comment) {
             items.add(comment);
         }
 
         public void emit(String comment) {
-            items.add(new AssemblyItem.Comment(comment));
+            items.add(new Comment(comment));
         }
 
-        public void emit(AssemblyItem.Directive directive) {
+        public void emit(Directive directive) {
             items.add(directive);
         }
 
@@ -78,18 +94,18 @@ public class AssemblyProgram {
             items.forEach(item ->
                     item.accept(new AssemblyItemVisitor() {
 
-                        public void visitComment(AssemblyItem.Comment comment) {
+                        public void visitComment(Comment comment) {
                             writer.println(comment);
                         }
-                        public void visitLabel(AssemblyItem.Label label) {
+                        public void visitLabel(Label label) {
                             writer.println(label + ":");
                         }
 
-                        public void visitDirective(AssemblyItem.Directive directive) {
+                        public void visitDirective(Directive directive) {
                             writer.println(directive);
                         }
 
-                        public void visitInstruction(AssemblyItem.Instruction instruction) {
+                        public void visitInstruction(Instruction instruction) {
                             writer.println(instruction);
                         }
                     })
@@ -113,7 +129,7 @@ public class AssemblyProgram {
 
     private Section currSection;
 
-    public final List<Section> sections = new ArrayList<Section>();
+    public final List<Section> sections = new ArrayList<>();
 
     public void emitSection(Section section) {
         currSection = section;

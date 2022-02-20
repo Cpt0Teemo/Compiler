@@ -1,0 +1,67 @@
+package gen.asm;
+
+import java.util.HashMap;
+
+/**
+ * A label in a MIPS assembly program.
+ *
+ * {@link gen.asm.Label} instances are flyweights. That is, the class' design makes it so that (barring multithreading
+ * or reflection shenanigans) there can be at most one {@link gen.asm.Label} instance per name. Use {@link #create(String)}
+ * and {@link #create()} to generate fresh {@link gen.asm.Label} instances.
+ */
+public final class Label extends AssemblyItem {
+    /**
+     * The label's unique name.
+     */
+    public final String name;
+
+    private Label(String name) {
+        this.name = name;
+    }
+
+    public String toString() {
+        return name;
+    }
+
+    public void accept(AssemblyItemVisitor v) {
+        v.visitLabel(this);
+    }
+
+    // This hash map interns flyweight instances to ensure that no two Virtual instances have the same name.
+    private static final HashMap<String, gen.asm.Label> instances = new HashMap<>();
+
+    /**
+     * Gets the unique label for a given name.
+     *
+     * @param name The label's name.
+     * @return The unique {@link gen.asm.Label} instance with name {@code name}.
+     */
+    public static gen.asm.Label get(String name) {
+        return instances.computeIfAbsent(name, gen.asm.Label::new);
+    }
+
+    /**
+     * Creates a fresh label with a unique name.
+     *
+     * @param nameSuffix A suffix to append to the label's name.
+     * @return A unique {@link gen.asm.Label} instance.
+     */
+    public static gen.asm.Label create(String nameSuffix) {
+        int counter = instances.size();
+        String draftName;
+        do {
+            draftName = "label_" + counter + "_" + nameSuffix;
+            counter++;
+        } while (instances.containsKey(draftName));
+        return get(draftName);
+    }
+
+    /**
+     * Creates a fresh label with a unique name.
+     *
+     * @return A unique {@link gen.asm.Label} instance.
+     */
+    public static gen.asm.Label create() {
+        return create("");
+    }
+}

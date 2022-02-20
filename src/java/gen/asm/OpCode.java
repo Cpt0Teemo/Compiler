@@ -1,0 +1,319 @@
+package gen.asm;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+/**
+ * Identifies a MIPS integer opcode.
+ */
+@SuppressWarnings("StaticInitializerReferencesSubClass")
+public abstract class OpCode {
+    /**
+     * The family of opcodes to which an opcode belongs. Each family of opcodes corresponds to a family of
+     * {@link Instruction} subclasses.
+     */
+    public enum Kind {
+        /**
+         * A type R opcode.
+         */
+        CORE_ARITHMETIC,
+
+        /**
+         * A type J opcode.
+         */
+        JUMP,
+
+        /**
+         * A type I branch opcode.
+         */
+        BRANCH,
+
+        /**
+         * A type I arithmetic opcode.
+         */
+        ARITHMETIC_WITH_IMMEDIATE,
+
+        /**
+         * A type I load opcode.
+         */
+        LOAD,
+
+        /**
+         * A type I store opcode.
+         */
+        STORE,
+
+        /**
+         * The special load upper immediate opcode. This is a type I opcode that discards its source register.
+         */
+        LOAD_UPPER_IMMEDIATE,
+
+        /**
+         * The load address pseudo-op.
+         */
+        LOAD_ADDRESS,
+
+        /**
+         * A pseudo-opcode whose meaning is known only to the compiler.
+         */
+        NULLARY_INTRINSIC
+    }
+
+    /**
+     * The opcode's mnemonic, i.e., the textual representation of the opcode in an assembly file.
+     */
+    public final String mnemonic;
+
+    /**
+     * Creates an {@link OpCode} instance from a mnemonic.
+     *
+     * @param mnemonic The mnemonic that identifies the opcode.
+     */
+    public OpCode(final String mnemonic) {
+        this.mnemonic = mnemonic;
+    }
+
+    /**
+     * Gets the family of opcodes this opcode belongs to.
+     *
+     * @return An opcode kind.
+     */
+    public abstract Kind kind();
+
+    @Override
+    public String toString() {
+        return mnemonic;
+    }
+
+    /**
+     * Tries to interpret a mnemonic as an opcode.
+     *
+     * @param mnemonic The mnemonic to interpret.
+     * @return An opcode corresponding to {@code mnemonic} if the latter is well-understood; otherwise,
+     * {@link Optional#empty()}.
+     */
+    public static Optional<OpCode> tryParse(String mnemonic) {
+        return allOps().stream().filter(x -> x.mnemonic.equals(mnemonic)).findAny();
+    }
+
+    public static final CoreArithmetic ADD = new CoreArithmetic("add");
+    public static final CoreArithmetic ADDU = new CoreArithmetic("addu");
+    public static final CoreArithmetic AND = new CoreArithmetic("and");
+    public static final CoreArithmetic JR = new CoreArithmetic("jr");
+    public static final CoreArithmetic NOR = new CoreArithmetic("nor");
+    public static final CoreArithmetic SLT = new CoreArithmetic("slt");
+    public static final CoreArithmetic SLTU = new CoreArithmetic("sltu");
+    public static final CoreArithmetic SLL = new CoreArithmetic("sll");
+    public static final CoreArithmetic SRL = new CoreArithmetic("srl");
+    public static final CoreArithmetic SUB = new CoreArithmetic("sub");
+    public static final CoreArithmetic SUBU = new CoreArithmetic("subu");
+
+    /**
+     * A list of all known core arithmetic opcodes.
+     */
+    public static final List<CoreArithmetic> coreArithmeticOps =
+        List.of(ADD, ADDU, AND, JR, NOR, SLT, SLTU, SLL, SRL, SUB, SUBU);
+
+    public static final ArithmeticWithImmediate ADDI = new ArithmeticWithImmediate("addi");
+    public static final ArithmeticWithImmediate ADDIU = new ArithmeticWithImmediate("addiu");
+    public static final ArithmeticWithImmediate ANDI = new ArithmeticWithImmediate("andi");
+    public static final ArithmeticWithImmediate ORI = new ArithmeticWithImmediate("ori");
+    public static final ArithmeticWithImmediate SLTI = new ArithmeticWithImmediate("slti");
+    public static final ArithmeticWithImmediate SLTIU = new ArithmeticWithImmediate("sltiu");
+
+    /**
+     * A list of all known type I arithmetic opcodes.
+     */
+    public static final List<ArithmeticWithImmediate> arithmeticWithImmediateOps =
+        List.of(ADDI, ADDIU, ANDI, ORI, SLTI, SLTIU);
+
+    public static final Branch BEQ = new Branch("beq");
+    public static final Branch BNE = new Branch("bne");
+
+    /**
+     * A list of all known type I branch opcodes.
+     */
+    public static final List<Branch> branchOps = List.of(BEQ, BNE);
+
+    public static final Jump J = new Jump("j");
+    public static final Jump JAL = new Jump("jal");
+
+    /**
+     * A list of all known type J opcodes.
+     */
+    public static final List<Jump> jumpOps = List.of(J, JAL);
+
+    public static final NullaryIntrinsic PUSH_REGISTERS = new NullaryIntrinsic("pushRegisters");
+    public static final NullaryIntrinsic POP_REGISTERS = new NullaryIntrinsic("popRegisters");
+
+    public static final Load LBU = new Load("lbu");
+    public static final Load LHU = new Load("lhu");
+    public static final Load LW = new Load("lw");
+    public static final Load LL = new Load("ll");
+
+    /**
+     * A list of all known type I load opcodes.
+     */
+    public static final List<Load> loadOps = List.of(LBU, LHU, LW, LL);
+
+    public static final Store SB = new Store("sb");
+    public static final Store SH = new Store("sh");
+    public static final Store SW = new Store("sw");
+    public static final Store SC = new Store("sc");
+
+    /**
+     * A list of all known type I store opcodes.
+     */
+    public static final List<Store> storeOps = List.of(SB, SH, SW, SC);
+
+    /**
+     * A list of all known intrinsic pseudo-opcodes.
+     */
+    public static final List<NullaryIntrinsic> nullaryIntrinsicOps = List.of(PUSH_REGISTERS, POP_REGISTERS);
+
+    public static final LoadUpperImmediate LUI = new LoadUpperImmediate("lui");
+    public static final LoadAddress LA = new LoadAddress("la");
+
+    /**
+     * Gets a list of all opcodes known to the compiler.
+     */
+    public static List<OpCode> allOps() {
+        return Stream.of(
+                coreArithmeticOps.stream().map(x -> (OpCode) x),
+                arithmeticWithImmediateOps.stream().map(x -> (OpCode) x),
+                branchOps.stream().map(x -> (OpCode) x),
+                jumpOps.stream().map(x -> (OpCode) x),
+                loadOps.stream().map(x -> (OpCode) x),
+                storeOps.stream().map(x -> (OpCode) x),
+                nullaryIntrinsicOps.stream().map(x -> (OpCode) x),
+                Stream.of(LUI, LA)
+        ).flatMap(s -> s).toList();
+    }
+
+    /**
+     * An opcode for core arithmetic instructions.
+     */
+    public static final class CoreArithmetic extends OpCode {
+        private CoreArithmetic(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.CORE_ARITHMETIC;
+        }
+    }
+
+    /**
+     * An opcode for type I arithmetic instructions.
+     */
+    public static final class ArithmeticWithImmediate extends OpCode {
+        private ArithmeticWithImmediate(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.ARITHMETIC_WITH_IMMEDIATE;
+        }
+    }
+
+    /**
+     * A pseudo-opcode for intrinsics.
+     */
+    public static final class NullaryIntrinsic extends OpCode {
+        private NullaryIntrinsic(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.NULLARY_INTRINSIC;
+        }
+    }
+
+    /**
+     * An opcode for type J instructions.
+     */
+    public static final class Jump extends OpCode {
+        private Jump(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.JUMP;
+        }
+    }
+
+    /**
+     * An opcode for branch instructions.
+     */
+    public static final class Branch extends OpCode {
+        private Branch(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.BRANCH;
+        }
+    }
+
+    /**
+     * An opcode for load instructions.
+     */
+    public static final class Load extends OpCode {
+        private Load(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.LOAD;
+        }
+    }
+
+    /**
+     * An opcode for store instructions.
+     */
+    public static final class Store extends OpCode {
+        private Store(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.STORE;
+        }
+    }
+
+    /**
+     * An opcode for the load upper immediate (lui) instruction.
+     */
+    public static final class LoadUpperImmediate extends OpCode {
+        private LoadUpperImmediate(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.LOAD_UPPER_IMMEDIATE;
+        }
+    }
+
+    /**
+     * An opcode for the load address (la) pseudo-instruction.
+     */
+    public static final class LoadAddress extends OpCode {
+        private LoadAddress(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.LOAD_ADDRESS;
+        }
+    }
+}
