@@ -2,6 +2,7 @@ package gen;
 
 import ast.*;
 import gen.asm.AssemblyProgram;
+import gen.asm.Register;
 
 /**
  * A visitor that produces code for a function declaration
@@ -20,6 +21,15 @@ public class FunGen implements ASTVisitor<Void> {
     }
 
     @Override
+    public Void visitStructType(StructType bt) { throw new ShouldNotReach(); }
+
+    @Override
+    public Void visitPointerType(PointerType bt) { throw new ShouldNotReach(); }
+
+    @Override
+    public Void visitArrayType(ArrayType bt) { throw new ShouldNotReach(); }
+
+    @Override
     public Void visitStructTypeDecl(StructTypeDecl st) {
         throw new ShouldNotReach();
     }
@@ -27,6 +37,31 @@ public class FunGen implements ASTVisitor<Void> {
     @Override
     public Void visitBlock(Block b) {
         // TODO: to complete
+        return null;
+    }
+
+    @Override
+    public Void visitWhile(While w) {
+        return null;
+    }
+
+    @Override
+    public Void visitIf(If i) {
+        return null;
+    }
+
+    @Override
+    public Void visitReturn(Return r) {
+        return null;
+    }
+
+    @Override
+    public Void visitAssign(Assign a) {
+        return null;
+    }
+
+    @Override
+    public Void visitExprStmt(ExprStmt es) {
         return null;
     }
 

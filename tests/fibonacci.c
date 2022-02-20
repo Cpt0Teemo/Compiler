@@ -1,4 +1,5 @@
 #include "minic-stdlib.h"
+#include "minic-stdlib.h"
 
 void main() {
   int n;
@@ -10,14 +11,14 @@ void main() {
 
   // read n from the standard input
   n = read_i();
-  
+
   first = 0;
   second = 1;
-    
+
   print_s((char*)"First ");
   print_i(n);
   print_s((char*)" terms of Fibonacci series are : ");
- 
+
   c = 0;
   while (c < n) {
     if ( c <= 1 )
@@ -30,6 +31,6 @@ void main() {
       }
     print_i(next);
     print_s((char*)" ");
-    c = c+1;
+    c = c +1;
   }
-}
+}//

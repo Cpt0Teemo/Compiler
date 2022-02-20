@@ -22,6 +22,15 @@ public class AddrGen implements ASTVisitor<Register> {
     }
 
     @Override
+    public Register visitStructType(StructType bt) { throw new ShouldNotReach(); }
+
+    @Override
+    public Register visitPointerType(PointerType bt) { throw new ShouldNotReach(); }
+
+    @Override
+    public Register visitArrayType(ArrayType bt) { throw new ShouldNotReach(); }
+
+    @Override
     public Register visitStructTypeDecl(StructTypeDecl st) {
         throw new ShouldNotReach();
     }
@@ -30,6 +39,21 @@ public class AddrGen implements ASTVisitor<Register> {
     public Register visitBlock(Block b) {
         throw new ShouldNotReach();
     }
+
+    @Override
+    public Register visitWhile(While w) { throw new ShouldNotReach(); }
+
+    @Override
+    public Register visitIf(If i) { throw new ShouldNotReach(); }
+
+    @Override
+    public Register visitReturn(Return r) { throw new ShouldNotReach(); }
+
+    @Override
+    public Register visitAssign(Assign a) { throw new ShouldNotReach(); }
+
+    @Override
+    public Register visitExprStmt(ExprStmt es) { throw new ShouldNotReach(); }
 
     @Override
     public Register visitFunDecl(FunDecl p) {

@@ -263,8 +263,12 @@ public class Tokeniser {
         sb.append(c);
         while(sb.length() < 6 && Character.isLetter(scanner.peek())) {
             sb.append(scanner.next());
-            if(mapStringToToken(sb.toString()) != null)
+            if(mapStringToToken(sb.toString()) != null) {
+                char nextChar = scanner.peek();
+                if(Character.isLetter(nextChar) || Character.isDigit(nextChar) || nextChar == '_')
+                    break;
                 return new Token(mapStringToToken(sb.toString()), line, column);
+            }
         }
         sb = traverseIdentifiers(sb);
         return new Token(TokenClass.IDENTIFIER, sb.toString(), line, column);

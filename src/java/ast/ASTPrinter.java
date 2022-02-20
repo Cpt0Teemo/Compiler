@@ -19,6 +19,31 @@ public class ASTPrinter implements ASTVisitor<Void> {
     }
 
     @Override
+    public Void visitWhile(While w) {
+        return null;
+    }
+
+    @Override
+    public Void visitIf(If i) {
+        return null;
+    }
+
+    @Override
+    public Void visitReturn(Return r) {
+        return null;
+    }
+
+    @Override
+    public Void visitAssign(Assign a) {
+        return null;
+    }
+
+    @Override
+    public Void visitExprStmt(ExprStmt es) {
+        return null;
+    }
+
+    @Override
     public Void visitFunDecl(FunDecl fd) {
         writer.print("FunDecl(");
         fd.type.accept(this);
@@ -46,11 +71,11 @@ public class ASTPrinter implements ASTVisitor<Void> {
             delimiter = ",";
             vd.accept(this);
         }
-        for (FunDecl fd : p.funDecls) {
+        /*for (FunDecl fd : p.funDecls) {
             writer.print(delimiter);
             delimiter = ",";
             fd.accept(this);
-        }
+        }*/
         writer.print(")");
 	    writer.flush();
         return null;
@@ -75,13 +100,36 @@ public class ASTPrinter implements ASTVisitor<Void> {
 
     @Override
     public Void visitBaseType(BaseType bt) {
-        // to complete ...
+       writer.print(bt.name());
+        return null;
+    }
+
+    @Override
+    public Void visitStructType(StructType bt) {
+        writer.print(String.format("StructType(%s)\n", bt.name));
+        return null;
+    }
+
+    @Override
+    public Void visitPointerType(PointerType bt) {
+        writer.print(String.format("PointerType( %s) \n", bt.type));
+        return null;
+    }
+
+    @Override
+    public Void visitArrayType(ArrayType bt) {
+        writer.print(String.format("ArrayType( %s, %d)\n", bt.type, bt.size));
         return null;
     }
 
     @Override
     public Void visitStructTypeDecl(StructTypeDecl st) {
-        // to complete ...
+        writer.print("StructTypeDecl( ");
+        writer.print(st.name);
+        for (VarDecl varDecl: st.varDecls) {
+            writer.print(String.format("VarDecl( %s, %s) ", varDecl.varName, varDecl.type.toString()));
+        }
+        writer.print(")\n");
         return null;
     }
 

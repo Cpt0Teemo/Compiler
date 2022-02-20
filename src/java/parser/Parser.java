@@ -1,16 +1,12 @@
 package parser;
 
-import ast.FunDecl;
-import ast.Program;
-import ast.StructTypeDecl;
-import ast.VarDecl;
+import ast.*;
 import lexer.Token;
 import lexer.Token.TokenClass;
 import lexer.Tokeniser;
+import util.Pair;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 
 
 /**
@@ -138,9 +134,9 @@ public class Parser {
 
     private Program parseProgram() {
         parseIncludes();
-        List<StructTypeDecl> stds = parseStructDecls();
-        List<VarDecl> vds = parseVarDecls(false);
-        List<FunDecl> fds = parseFunDecls();
+        List<StructTypeDecl> stds = parseStructDecls(new ArrayList<>());
+        List<VarDecl> vds = parseVarDecls(false, new ArrayList<>());
+        List<FunDecl> fds = parseFunDecls(new ArrayList<>());
         expect(TokenClass.EOF);
         return new Program(stds, vds, fds);
     }
@@ -154,39 +150,47 @@ public class Parser {
         }
     }
 
-    private List<StructTypeDecl> parseStructDecls() {
-       if (accept(TokenClass.STRUCT)) {
+    private List<StructTypeDecl> parseStructDecls(List<StructTypeDecl> structTypeDecls) {
+       if (accept(TokenClass.STRUCT) && lookAhead(2).tokenClass == TokenClass.LBRA) {
            nextToken();
+           String structName = token.data;
            expect(TokenClass.IDENTIFIER);
            expect(TokenClass.LBRA);
-           parseVarDecls(false); //TODO confirm at least one Var declaration
+           List<VarDecl> varDecls = parseVarDecls(true, new ArrayList<>());
+           StructTypeDecl struct = new StructTypeDecl(structName, varDecls);
            expect(TokenClass.RBRA);
            expect(TokenClass.SC);
 
-           parseStructDecls();
+           structTypeDecls.add(struct);
+           return parseStructDecls(structTypeDecls);
        }
-       return null; //TODO
+       return structTypeDecls;
     }
 
-    private List<VarDecl> parseVarDecls(boolean atLeastOne) {
+    private List<VarDecl> parseVarDecls(boolean atLeastOne, List<VarDecl> varDecls) {
         int horizon = 2;
         if(token.tokenClass == TokenClass.STRUCT)
             horizon = 3;
 
         if (accept(typesArray) && lookAhead(horizon).tokenClass != TokenClass.LPAR) {
-            parseType();
+            Type type = parseType();
+            String identifier = token.data;
             expect(TokenClass.IDENTIFIER);
 
             if(accept(TokenClass.SC)) {
                 nextToken();
-                parseVarDecls(false);
+                varDecls.add(new VarDecl(type, identifier));
+                parseVarDecls(false, varDecls);
             }
-            else if(accept(TokenClass.LSBR)) {
+            else if(accept(TokenClass.LSBR)) { //Array declaration
                 nextToken();
+                int size = Integer.valueOf(token.data);
                 expect(TokenClass.INT_LITERAL);
                 expect(TokenClass.RSBR);
                 expect(TokenClass.SC);
-                parseVarDecls(false);
+                type = ArrayType.fromType(type, size);
+                varDecls.add(new VarDecl(type, identifier));
+                parseVarDecls(false, varDecls);
             }
             else {
                 error(TokenClass.SC, TokenClass.LSBR);
@@ -194,108 +198,146 @@ public class Parser {
         } else if (atLeastOne) {
             error(TokenClass.INT, TokenClass.CHAR, TokenClass.VOID, TokenClass.STRUCT);
         }
-        return null; //TODO
+        return varDecls;
     }
 
-    private List<FunDecl> parseFunDecls() {
+    private List<FunDecl> parseFunDecls(List<FunDecl> funDecls) {
         if (lookAhead(2).tokenClass == TokenClass.LPAR) {
-            parseType();
+            Type type = parseType();
+            String name = token.data;
             expect(TokenClass.IDENTIFIER);
             expect(TokenClass.LPAR);
-            parseParams();
+            List<VarDecl> params = parseParams();
             expect(TokenClass.RPAR);
-            parseBlock();
-            parseFunDecls();
+            Block block = parseBlock();
+            funDecls.add(new FunDecl(type, name, params, block));
+            parseFunDecls(funDecls);
         }
-        return null; //TODO
+        return funDecls; //TODO
     }
 
-    private void parseType() {
+    private Type parseType() {
+        Type type = null;
         if(types.contains(token.tokenClass)) {
             if(accept(TokenClass.STRUCT)) {
                 nextToken();
+                type = new StructType(token.data);
                 expect(TokenClass.IDENTIFIER);
             } else {
+                type = BaseType.fromTokenClass(token.tokenClass);
                 nextToken();
             }
-            if(accept(TokenClass.ASTERIX))
+            if(accept(TokenClass.ASTERIX)) {
                 nextToken();
-            return;
+                type = new PointerType(type);
+            }
+            return type;
         }
         error(TokenClass.INT, TokenClass.CHAR, TokenClass.VOID, TokenClass.STRUCT);
+        //TODO REMOVE NULL RETURNS
+        return null;
     }
 
-    private void parseParams() {
+    private List<VarDecl> parseParams() {
+        List<VarDecl> params = new ArrayList<>();
         if(types.contains(token.tokenClass)) {
-            parseType();
+            Type type = parseType();
+            String name = token.data;
             expect(TokenClass.IDENTIFIER);
+            params.add(new VarDecl(type, name));
             while(accept(TokenClass.COMMA)) {
                 nextToken();
-                parseType();
+                type = parseType();
+                name = token.data;
                 expect(TokenClass.IDENTIFIER);
+                params.add(new VarDecl(type, name));
             }
         }
+        return params;
     }
 
-    private void parseBlock() {
+    private Block parseBlock() {
         expect(TokenClass.LBRA);
-        parseVarDecls(false);
-        parseStmts();
+        List<VarDecl> varDecls = parseVarDecls(false, new ArrayList<>());
+        List<Stmt> stmts = parseStmts();
         expect(TokenClass.RBRA);
+        return new Block(varDecls, stmts);
     }
 
-    private void parseStmts() {
+    private List<Stmt> parseStmts() {
+        List<Stmt> stmts = new ArrayList<>();
+        while(accept(TokenClass.LBRA, TokenClass.WHILE, TokenClass.IF, TokenClass.RETURN) || isExp()) {
+            Stmt stmt = parseStmt();
+            if(stmt == null)
+                break;
+            stmts.add(stmt);
+        }
+        return stmts;
+    }
+
+    private Stmt parseStmt() {
         if(accept(TokenClass.LBRA)) {
-            parseBlock();
-            parseStmts();
+            return parseBlock();
         }
         else if(accept(TokenClass.WHILE)) {
             nextToken();
             expect(TokenClass.LPAR);
-            parseExp();
+            Expr condition = parseExp();
             expect(TokenClass.RPAR);
-            parseStmts();
+            Stmt insideLoop = parseStmt();
+            return new While(condition, insideLoop);
         }
         else if (accept(TokenClass.IF)) {
             nextToken();
             expect(TokenClass.LPAR);
-            parseExp();
+            Expr condition = parseExp();
             expect(TokenClass.RPAR);
-            parseStmts();
-            if(accept(TokenClass.ELSE))
+            Stmt ifStmt = parseStmt();
+            Stmt elseStmt = null;
+            if(accept(TokenClass.ELSE)) {
                 nextToken();
-            parseStmts();
+                elseStmt = parseStmt();
+            }
+            return new If(condition, ifStmt, elseStmt);
         }
         else if(accept(TokenClass.RETURN)) {
             nextToken();
-            if(isExp())
-                parseExp();
+            Expr expr = null;
+            if(isExp()) {
+                expr = parseExp();
+            }
             expect(TokenClass.SC);
-            parseStmts();
+            return new Return(expr);
         } else if(isExp()) {
-            parseExp();
-            parseStmtPrime();
-            parseStmts();
+            Expr lExpr = parseExp();
+            Expr rExpr = parseStmtPrime();
+            if(rExpr == null)
+                return new ExprStmt(lExpr);
+            else
+                return new Assign(lExpr, rExpr);
         }
+        return null;
     }
 
-    private void parseStmtPrime() {
+    private Expr parseStmtPrime() {
         if(accept(TokenClass.ASSIGN)) {
             nextToken();
-            parseExp();
+            Expr expr = parseExp();
             expect(TokenClass.SC);
+            return expr;
         } else if (accept(TokenClass.SC)){
             nextToken();
         } else {
             error(TokenClass.EQ, TokenClass.SC);
         }
+        return null;
     }
 
     private boolean isExp() {
         return expStart.contains(token.tokenClass);
     }
 
-    private void parseExp() {
+    private Expr parseExp() {
         TokenClass tokenClass = token.tokenClass;
         nextToken();
         switch(tokenClass) {
@@ -304,12 +346,12 @@ public class Parser {
                     parseType();
                     expect(TokenClass.RPAR);
                     parseExp();
-                    return;
+                    return null;
                 } else {
                     parseExp();
                     expect(TokenClass.RPAR);
                     parseExpPrime();
-                    return;
+                    return null;
                 }
             case IDENTIFIER:
                 if(accept(TokenClass.LPAR)) { //Function call
@@ -323,40 +365,41 @@ public class Parser {
                     }
                     expect(TokenClass.RPAR);
                     parseExpPrime();
-                    return;
+                    return null;
                 } else {
                     parseExpPrime();
-                    return;
+                    return null;
                 }
             case INT_LITERAL:
                 parseExpPrime();
-                return;
+                return null;
             case PLUS: case MINUS:
                 parseExp();
                 parseExpPrime();
-                return;
+                return null;
             case CHAR_LITERAL:
                 parseExpPrime();
-                return;
+                return null;
             case STRING_LITERAL:
                 parseExpPrime();
-                return;
+                return null;
             case ASTERIX:
                 parseExp();
                 parseExpPrime();
-                return;
+                return null;
             case AND:
                 parseExp();
                 parseExpPrime();
-                return;
+                return null;
             case SIZEOF:
                 expect(TokenClass.SIZEOF);
                 expect(TokenClass.LPAR);
                 parseType();
                 expect(TokenClass.RPAR);
-                return;
+                return null;
             default:
                 error(expStartArray);
+                return null;
         }
     }
 
