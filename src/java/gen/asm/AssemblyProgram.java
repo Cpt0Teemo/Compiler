@@ -3,6 +3,7 @@ package gen.asm;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class AssemblyProgram {
 
@@ -17,15 +18,14 @@ public class AssemblyProgram {
 
         public final List<AssemblyItem> items = new ArrayList<AssemblyItem>();
 
-
         public void emit(AssemblyItem.Instruction instruction) {
             assert this.type == Type.TEXT;
             items.add(instruction);
         }
 
-        public void emit(AssemblyItem.RInstruction.OpCode opcode, Register dst, Register src1, Register src2) {
+        public void emit(AssemblyItem.CoreArithmetic.OpCode opcode, Register dst, Register src1, Register src2) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.RInstruction(opcode, dst, src1, src2));
+            items.add(new AssemblyItem.CoreArithmetic(opcode, dst, src1, src2));
         }
 
         public void emit(AssemblyItem.Branch.OpCode opcode, Register src1, Register src2, AssemblyItem.Label label) {
@@ -33,9 +33,9 @@ public class AssemblyProgram {
             items.add(new AssemblyItem.Branch(opcode, src1, src2, label));
         }
 
-        public void emit(AssemblyItem.IInstruction.OpCode opcode, Register dst, Register src, int imm) {
+        public void emit(AssemblyItem.ArithmeticWithImmediate.OpCode opcode, Register dst, Register src, int imm) {
             assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.IInstruction(opcode, dst, src, imm));
+            items.add(new AssemblyItem.ArithmeticWithImmediate(opcode, dst, src, imm));
         }
 
         public void emitLoadAddress(Register dst, AssemblyItem.Label label) {
@@ -95,6 +95,19 @@ public class AssemblyProgram {
                     })
             );
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Section section = (Section) o;
+            return type == section.type && items.equals(section.items);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, items);
+        }
     }
 
 
@@ -113,18 +126,25 @@ public class AssemblyProgram {
         return currSection;
     }
 
-
-
-
     public void print(final PrintWriter writer) {
-
         sections.forEach(section -> {
                 section.print(writer);
                 writer.println();
         });
 
-
         writer.close();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AssemblyProgram that = (AssemblyProgram) o;
+        return sections.equals(that.sections);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sections);
+    }
 }

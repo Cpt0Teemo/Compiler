@@ -6,8 +6,7 @@ import gen.asm.Register;
 import gen.asm.AssemblyProgram;
 import regalloc.NaiveRegAlloc;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
+import java.io.*;
 
 public class Test {
     public static void main(String[] args) {
@@ -18,9 +17,9 @@ public class Test {
         Register v2 = Register.Virtual.create();
         Register v3 = Register.Virtual.create();
         text.emit(AssemblyItem.Intrinsic.pushRegisters);
-        text.emit(AssemblyItem.IInstruction.OpCode.ADDI, v1, Register.Arch.zero, 4);
-        text.emit(AssemblyItem.IInstruction.OpCode.ADDI, v2, Register.Arch.zero, 8);
-        text.emit(AssemblyItem.RInstruction.OpCode.ADD, v3, v1, v2);
+        text.emit(AssemblyItem.ArithmeticWithImmediate.OpCode.ADDI, v1, Register.Arch.zero, 4);
+        text.emit(AssemblyItem.ArithmeticWithImmediate.OpCode.ADDI, v2, Register.Arch.zero, 8);
+        text.emit(AssemblyItem.CoreArithmetic.OpCode.ADD, v3, v1, v2);
         text.emit(AssemblyItem.Intrinsic.popRegisters);
 
         try {
@@ -42,6 +41,8 @@ public class Test {
         }
 
         canParseAssemblyItems();
+        assertCanRoundTrip(prog);
+        assertCanRoundTrip(newProg);
     }
 
     private static void canParseAssemblyItems() {
@@ -50,15 +51,15 @@ public class Test {
         assertEqual(AssemblyParser.parseAssemblyItem(".space 4"), new AssemblyItem.Directive("space 4"));
         assertEqual(
             AssemblyParser.parseAssemblyItem("add $t0, v0, $t2"),
-            new AssemblyItem.RInstruction(
-                AssemblyItem.RInstruction.OpCode.ADD,
+            new AssemblyItem.CoreArithmetic(
+                AssemblyItem.CoreArithmetic.OpCode.ADD,
                 Register.Arch.t0,
                 Register.Virtual.get("v0"),
                 Register.Arch.t2));
         assertEqual(
             AssemblyParser.parseAssemblyItem("addi $t0, v0, 15"),
-            new AssemblyItem.IInstruction(
-                AssemblyItem.IInstruction.OpCode.ADDI,
+            new AssemblyItem.ArithmeticWithImmediate(
+                AssemblyItem.ArithmeticWithImmediate.OpCode.ADDI,
                 Register.Arch.t0,
                 Register.Virtual.get("v0"),
                 15));
@@ -109,6 +110,23 @@ public class Test {
     private static void assertEqual(AssemblyItem first, AssemblyItem second) {
         if (!first.equals(second)) {
             throw new Error(first + " does not equal " + second);
+        }
+    }
+
+    private static void assertCanRoundTrip(AssemblyProgram program) {
+        // First, we convert our AssemblyProgram to a textual MIPS assembly file. We will store the file in memory in
+        // the form of a string.
+        var out = new StringWriter();
+        var writer = new PrintWriter(out);
+        program.print(writer);
+
+        // Next, we read the file we just created. This effectively creates a copy of `program`.
+        var programCopy = AssemblyParser.readAssemblyProgram(
+            new BufferedReader(new StringReader(out.toString())));
+
+        // Now all we need to do is simply check that the programs are equivalent.
+        if (!program.equals(programCopy)) {
+            throw new Error("Cannot round-trip program:\n" + out);
         }
     }
 }

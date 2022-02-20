@@ -1,6 +1,7 @@
 package gen.asm;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
@@ -10,12 +11,50 @@ import java.util.*;
  */
 public final class AssemblyParser {
     /**
+     * Reads a MIPS assembly program from a buffered reader.
+     * @param reader A buffered reader that reads from a textual MIPS assembly program.
+     * @return An {@link AssemblyProgram} instance that corresponds to the text being read by {@code reader}.
+     */
+    public static AssemblyProgram readAssemblyProgram(final BufferedReader reader) {
+        var textDirective = new AssemblyItem.Directive("text");
+        var dataDirective = new AssemblyItem.Directive("data");
+
+        var program = new AssemblyProgram();
+        AssemblyProgram.Section currentSection = null;
+        for (var line : reader.lines().toList()) {
+            var item = parseAssemblyItem(line);
+            if (item == null) {
+                continue;
+            }
+
+            if (item.equals(textDirective) || item.equals(dataDirective)) {
+                if (currentSection != null) {
+                    program.emitSection(currentSection);
+                }
+                currentSection = new AssemblyProgram.Section(
+                    item.equals(dataDirective) ? AssemblyProgram.Section.Type.DATA : AssemblyProgram.Section.Type.TEXT);
+            } else {
+                if (currentSection == null) {
+                    currentSection = new AssemblyProgram.Section(AssemblyProgram.Section.Type.TEXT);
+                }
+                currentSection.items.add(item);
+            }
+        }
+
+        if (currentSection != null) {
+            program.emitSection(currentSection);
+        }
+
+        return program;
+    }
+
+    /**
      * Reads an {@link AssemblyItem} from an input buffer.
      * @param reader A buffered reader that reads lines of MIPS assembly code.
      * @throws java.io.IOException If an I/O error occurs.
      * @return An assembly item if the line read from the input buffer is nonempty; otherwise, {@code null}.
      */
-    public static AssemblyItem readAssemblyItem(final BufferedReader reader) throws java.io.IOException {
+    public static AssemblyItem readAssemblyItem(final BufferedReader reader) throws IOException {
         return parseAssemblyItem(reader.readLine());
     }
 
@@ -61,31 +100,31 @@ public final class AssemblyParser {
             var op = AssemblyItem.Instruction.OpCode.tryParse(opcodeAndArgs[0].trim());
             if (op.isEmpty())
             {
-                throw new Error("Ill-understood opcode " + op);
+                throw new Error("Ill-understood opcode " + opcodeAndArgs[0].trim());
             }
 
             var opcode = op.get();
             switch (opcode.kind())
             {
-                case LoadAddress:
+                case LOAD_ADDRESS:
                     checkArity(args, 2, line);
                     return new AssemblyItem.LoadAddress(parseRegister(args.get(0)), parseLabel(args.get(1)));
 
-                case TypeR:
+                case CORE_ARITHMETIC:
                     checkArity(args, 3, line);
-                    return new AssemblyItem.RInstruction(
-                            (AssemblyItem.RInstruction.OpCode)opcode,
+                    return new AssemblyItem.CoreArithmetic(
+                            (AssemblyItem.CoreArithmetic.OpCode)opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseRegister(args.get(2)));
 
-                case TypeJ:
+                case JUMP:
                     checkArity(args, 1, line);
                     return new AssemblyItem.Jump(
                             (AssemblyItem.Jump.OpCode)opcode,
                             parseLabel(args.get(0)));
 
-                case TypeIBranch:
+                case BRANCH:
                     checkArity(args, 3, line);
                     return new AssemblyItem.Branch(
                             (AssemblyItem.Branch.OpCode)opcode,
@@ -93,15 +132,15 @@ public final class AssemblyParser {
                             parseRegister(args.get(1)),
                             parseLabel(args.get(2)));
 
-                case TypeIArithmetic:
+                case ARITHMETIC_WITH_IMMEDIATE:
                     checkArity(args, 3, line);
-                    return new AssemblyItem.IInstruction(
-                            (AssemblyItem.IInstruction.OpCode)opcode,
+                    return new AssemblyItem.ArithmeticWithImmediate(
+                            (AssemblyItem.ArithmeticWithImmediate.OpCode)opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseImmediate(args.get(2)));
 
-                case TypeILoad: {
+                case LOAD: {
                     checkArity(args, 2, line);
                     var memOperand = parseMemoryOperand(args.get(1));
                     return new AssemblyItem.Load(
@@ -111,7 +150,7 @@ public final class AssemblyParser {
                             memOperand.getValue());
                 }
 
-                case TypeIStore:
+                case STORE:
                     checkArity(args, 2, line);
                     var memOperand = parseMemoryOperand(args.get(1));
                     return new AssemblyItem.Store(
@@ -120,13 +159,13 @@ public final class AssemblyParser {
                             memOperand.getKey(),
                             memOperand.getValue());
 
-                case LoadUpperImmediate:
+                case LOAD_UPPER_IMMEDIATE:
                     checkArity(args, 2, line);
                     return new AssemblyItem.LoadUpperImmediate(
                             parseRegister(args.get(0)),
                             parseImmediate(args.get(1)));
 
-                case Intrinsic:
+                case INTRINSIC:
                     if (opcode == AssemblyItem.Intrinsic.OpCode.pushRegisters) {
                         return AssemblyItem.Intrinsic.pushRegisters;
                     } else {

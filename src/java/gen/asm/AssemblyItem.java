@@ -4,9 +4,17 @@ package gen.asm;
 import java.util.*;
 import java.util.stream.Stream;
 
+/**
+ * A single item in an {@link AssemblyProgram.Section}. This typically corresponds to a line in the textual
+ * representation of an assembly program.
+ */
 public abstract class AssemblyItem {
     public abstract void accept(AssemblyItemVisitor v);
 
+    /**
+     * A comment in an assembly program. Comments do not change the meaning of a program, but may aid humans in their
+     * understanding of programs.
+     */
     public static class Comment extends AssemblyItem {
         public final String comment;
 
@@ -36,8 +44,10 @@ public abstract class AssemblyItem {
         }
     }
 
+    /**
+     * An assembler directive in a MIPS assembly program.
+     */
     public static class Directive extends AssemblyItem {
-
         private final String name;
         public Directive(String name) {
             this.name = name;
@@ -64,56 +74,63 @@ public abstract class AssemblyItem {
         }
     }
 
+    /**
+     * An instruction in a MIPS assembly program.
+     */
     public abstract static class Instruction extends AssemblyItem {
         /**
          * Identifies a MIPS integer opcode.
          */
         public static abstract class OpCode {
+            /**
+             * The family of opcodes to which an opcode belongs. Each family of opcodes corresponds to a family of
+             * {@link Instruction} subclasses.
+             */
             public enum Kind {
                 /**
                  * A type R opcode.
                  */
-                TypeR,
+                CORE_ARITHMETIC,
 
                 /**
                  * A type J opcode.
                  */
-                TypeJ,
+                JUMP,
 
                 /**
                  * A type I branch opcode.
                  */
-                TypeIBranch,
+                BRANCH,
 
                 /**
                  * A type I arithmetic opcode.
                  */
-                TypeIArithmetic,
+                ARITHMETIC_WITH_IMMEDIATE,
 
                 /**
                  * A type I load opcode.
                  */
-                TypeILoad,
+                LOAD,
 
                 /**
                  * A type I store opcode.
                  */
-                TypeIStore,
+                STORE,
 
                 /**
                  * The special load upper immediate opcode. This is a type I opcode that discards its source register.
                  */
-                LoadUpperImmediate,
+                LOAD_UPPER_IMMEDIATE,
 
                 /**
                  * The load address pseudo-op.
                  */
-                LoadAddress,
+                LOAD_ADDRESS,
 
                 /**
                  * A pseudo-opcode whose meaning is known only to the compiler.
                  */
-                Intrinsic
+                INTRINSIC
             }
 
             /**
@@ -144,12 +161,12 @@ public abstract class AssemblyItem {
             public static List<OpCode> allOps()
             {
                 return Stream.of(
-                    RInstruction.OpCode.typeROps().stream().map(x -> (OpCode)x),
-                    Jump.OpCode.typeJOps().stream().map(x -> (OpCode)x),
-                    Branch.OpCode.typeIBranchOps().stream().map(x -> (OpCode)x),
-                    IInstruction.OpCode.typeIArithmeticOps().stream().map(x -> (OpCode)x),
-                    Load.OpCode.typeILoadOps().stream().map(x -> (OpCode)x),
-                    Store.OpCode.typeIStoreOps().stream().map(x -> (OpCode)x),
+                    CoreArithmetic.OpCode.coreArithmeticOps().stream().map(x -> (OpCode)x),
+                    Jump.OpCode.jumpOps().stream().map(x -> (OpCode)x),
+                    Branch.OpCode.branchOps().stream().map(x -> (OpCode)x),
+                    ArithmeticWithImmediate.OpCode.arithmeticOps().stream().map(x -> (OpCode)x),
+                    Load.OpCode.loadOps().stream().map(x -> (OpCode)x),
+                    Store.OpCode.storeOps().stream().map(x -> (OpCode)x),
                     Intrinsic.OpCode.intrinsicOps().stream().map(x -> (OpCode)x),
                     Stream.of(LoadUpperImmediate.opcode, LoadAddress.opcode)
                 ).flatMap(s -> s).toList();
@@ -205,7 +222,10 @@ public abstract class AssemblyItem {
         }
     }
 
-    public static class RInstruction extends Instruction {
+    /**
+     * A core arithmetic instruction that takes three register arguments. This is a type R instruction.
+     */
+    public static class CoreArithmetic extends Instruction {
         /**
          * An opcode for type R instructions.
          */
@@ -216,7 +236,7 @@ public abstract class AssemblyItem {
 
             @Override
             public Kind kind() {
-                return Kind.TypeR;
+                return Kind.CORE_ARITHMETIC;
             }
 
             public static final OpCode ADD = new OpCode("add");
@@ -232,10 +252,10 @@ public abstract class AssemblyItem {
             public static final OpCode SUBU = new OpCode("subu");
 
             /**
-             * Produces a list of all known type R opcodes.
-             * @return A list of all known type R opcodes.
+             * Produces a list of all known core arithmetic opcodes.
+             * @return A list of all known core arithmetic opcodes.
              */
-            public static List<OpCode> typeROps() {
+            public static List<OpCode> coreArithmeticOps() {
                 return List.of(ADD, ADDU, AND, JR, NOR, SLT, SLTU, SLL, SRL, SUB, SUBU);
             }
         }
@@ -244,7 +264,7 @@ public abstract class AssemblyItem {
         public final Register src1;
         public final Register src2;
 
-        public RInstruction(OpCode opcode, Register dst, Register src1, Register src2) {
+        public CoreArithmetic(OpCode opcode, Register dst, Register src1, Register src2) {
             super(opcode);
             this.dst = dst;
             this.src1 = src1;
@@ -265,8 +285,8 @@ public abstract class AssemblyItem {
             return List.of(src1, src2);
         }
 
-        public RInstruction rebuild(Map<Register,Register> regMap) {
-            return new RInstruction(
+        public CoreArithmetic rebuild(Map<Register,Register> regMap) {
+            return new CoreArithmetic(
                 (OpCode)opcode,
                 regMap.getOrDefault(dst, dst),
                 regMap.getOrDefault(src1,src1),
@@ -277,7 +297,7 @@ public abstract class AssemblyItem {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            RInstruction that = (RInstruction) o;
+            CoreArithmetic that = (CoreArithmetic) o;
             return dst.equals(that.dst) && src1.equals(that.src1) && src2.equals(that.src2);
         }
 
@@ -301,7 +321,7 @@ public abstract class AssemblyItem {
 
             @Override
             public Kind kind() {
-                return Kind.TypeIBranch;
+                return Kind.BRANCH;
             }
 
             public static final OpCode BEQ = new OpCode("beq");
@@ -311,7 +331,7 @@ public abstract class AssemblyItem {
              * Produces a list of all known type I branch opcodes.
              * @return A list of all known type I branch opcodes.
              */
-            public static List<OpCode> typeIBranchOps() {
+            public static List<OpCode> branchOps() {
                 return List.of(BEQ, BNE);
             }
         }
@@ -359,8 +379,10 @@ public abstract class AssemblyItem {
         }
     }
 
-
-    public static class IInstruction extends Instruction {
+    /**
+     * A core arithmetic instruction with two register operands and one immediate operand. This is a type I instruction.
+     */
+    public static class ArithmeticWithImmediate extends Instruction {
         /**
          * An opcode for type I arithmetic instructions.
          */
@@ -371,7 +393,7 @@ public abstract class AssemblyItem {
 
             @Override
             public Kind kind() {
-                return Kind.TypeIArithmetic;
+                return Kind.ARITHMETIC_WITH_IMMEDIATE;
             }
 
             public static final OpCode ADDI = new OpCode("addi");
@@ -385,7 +407,7 @@ public abstract class AssemblyItem {
              * Produces a list of all known type I arithmetic opcodes.
              * @return A list of all known type I arithmetic opcodes.
              */
-            public static List<OpCode> typeIArithmeticOps() {
+            public static List<OpCode> arithmeticOps() {
                 return List.of(ADDI, ADDIU, ANDI, ORI, SLTI, SLTIU);
             }
         }
@@ -394,7 +416,7 @@ public abstract class AssemblyItem {
         public final Register dst;
         public final Register src;
 
-        public IInstruction(OpCode opcode, Register dst, Register src, int imm) {
+        public ArithmeticWithImmediate(OpCode opcode, Register dst, Register src, int imm) {
             super(opcode);
             this.imm = imm;
             this.src = src;
@@ -410,21 +432,20 @@ public abstract class AssemblyItem {
             return dst;
         }
 
-
         public List<Register> uses() {
             Register[] uses = {src};
             return Arrays.asList(uses);
         }
 
-        public IInstruction rebuild(Map<Register,Register> regMap) {
-            return new IInstruction((OpCode)opcode, regMap.getOrDefault(dst, dst),regMap.getOrDefault(src, src), imm);
+        public ArithmeticWithImmediate rebuild(Map<Register,Register> regMap) {
+            return new ArithmeticWithImmediate((OpCode)opcode, regMap.getOrDefault(dst, dst),regMap.getOrDefault(src, src), imm);
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            IInstruction that = (IInstruction) o;
+            ArithmeticWithImmediate that = (ArithmeticWithImmediate) o;
             return imm == that.imm && dst.equals(that.dst) && src.equals(that.src);
         }
 
@@ -448,7 +469,7 @@ public abstract class AssemblyItem {
 
             @Override
             public Kind kind() {
-                return Kind.TypeJ;
+                return Kind.JUMP;
             }
 
             public static final OpCode J = new OpCode("j");
@@ -458,7 +479,7 @@ public abstract class AssemblyItem {
              * Produces a list of all known type J opcodes.
              * @return A list of all known type J opcodes.
              */
-            public static List<OpCode> typeJOps() {
+            public static List<OpCode> jumpOps() {
                 return List.of(J, JAL);
             }
         }
@@ -510,6 +531,10 @@ public abstract class AssemblyItem {
         }
     }
 
+    /**
+     * An instruction that loads or stores an address in memory. The address is computed based on a register and an
+     * immediate operand.
+     */
     public abstract static class MemIndirect extends Instruction {
         public final Register op1;
         public final Register op2;
@@ -539,6 +564,9 @@ public abstract class AssemblyItem {
         }
     }
 
+    /**
+     * An instruction that stores a value in memory. This is a type I instruction.
+     */
     public static class Store extends MemIndirect {
         /**
          * An opcode for store instructions.
@@ -550,7 +578,7 @@ public abstract class AssemblyItem {
 
             @Override
             public Kind kind() {
-                return Kind.TypeIStore;
+                return Kind.STORE;
             }
 
             public static final OpCode SB = new OpCode("sb");
@@ -562,7 +590,7 @@ public abstract class AssemblyItem {
              * Produces a list of all known type I store opcodes.
              * @return A list of all known type I store opcodes.
              */
-            public static List<OpCode> typeIStoreOps() {
+            public static List<OpCode> storeOps() {
                 return List.of(SB, SH, SW, SC);
             }
         }
@@ -583,6 +611,9 @@ public abstract class AssemblyItem {
         }
     }
 
+    /**
+     * An instruction that loads a value from memory and stores it in a register. This is a type I instruction.
+     */
     public static class Load extends MemIndirect {
         /**
          * An opcode for store instructions.
@@ -594,7 +625,7 @@ public abstract class AssemblyItem {
 
             @Override
             public Kind kind() {
-                return Kind.TypeILoad;
+                return Kind.LOAD;
             }
 
             public static final OpCode LBU = new OpCode("lbu");
@@ -606,7 +637,7 @@ public abstract class AssemblyItem {
              * Produces a list of all known type I load opcodes.
              * @return A list of all known type I load opcodes.
              */
-            public static List<OpCode> typeILoadOps() {
+            public static List<OpCode> loadOps() {
                 return List.of(LBU, LHU, LW, LL);
             }
         }
@@ -634,7 +665,7 @@ public abstract class AssemblyItem {
         public static final OpCode opcode = new OpCode("lui") {
             @Override
             public Kind kind() {
-                return Kind.LoadUpperImmediate;
+                return Kind.LOAD_UPPER_IMMEDIATE;
             }
         };
 
@@ -683,7 +714,7 @@ public abstract class AssemblyItem {
         public static final OpCode opcode = new OpCode("la") {
             @Override
             public Kind kind() {
-                return Kind.LoadAddress;
+                return Kind.LOAD_ADDRESS;
             }
         };
 
@@ -742,7 +773,7 @@ public abstract class AssemblyItem {
 
             @Override
             public Kind kind() {
-                return Kind.Intrinsic;
+                return Kind.INTRINSIC;
             }
 
             public static final OpCode pushRegisters = new OpCode("pushRegisters");
@@ -784,6 +815,11 @@ public abstract class AssemblyItem {
         @Override
         public Instruction rebuild(Map<Register, Register> regMap) {
             return this;
+        }
+
+        @Override
+        public String toString() {
+            return opcode.toString();
         }
     }
 

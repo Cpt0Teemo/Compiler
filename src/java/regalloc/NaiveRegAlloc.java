@@ -126,7 +126,7 @@ public class NaiveRegAlloc {
                                         newSection.emitLoad(AssemblyItem.Load.OpCode.LW, Register.Arch.t0, Register.Arch.t0, 0);
 
                                         // push $t0 onto stack
-                                        newSection.emit(AssemblyItem.IInstruction.OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
+                                        newSection.emit(AssemblyItem.ArithmeticWithImmediate.OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
                                         newSection.emitStore(AssemblyItem.Store.OpCode.SW, Register.Arch.t0, Register.Arch.sp, 0);
                                     }
                                 } else if (insn == AssemblyItem.Intrinsic.popRegisters) {
@@ -134,7 +134,7 @@ public class NaiveRegAlloc {
                                     for (AssemblyItem.Label l : reverseVrLabels) {
                                         // pop from stack into $t0
                                         newSection.emitLoad(AssemblyItem.Load.OpCode.LW, Register.Arch.t0, Register.Arch.sp, 0);
-                                        newSection.emit(AssemblyItem.IInstruction.OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, 4);
+                                        newSection.emit(AssemblyItem.ArithmeticWithImmediate.OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, 4);
 
                                         // store content of $t0 in memory at label
                                         newSection.emitLoadAddress(Register.Arch.t1, l);
