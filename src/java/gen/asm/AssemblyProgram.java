@@ -43,9 +43,9 @@ public class AssemblyProgram {
             items.add(new Instruction.LoadAddress(dst, label));
         }
 
-        public void emit(OpCode.LoadUpperImmediate ignoredOpcode, Register dst, int immediate) {
+        public void emit(OpCode.LoadImmediate opcode, Register dst, int immediate) {
             assert this.type == Type.TEXT;
-            items.add(new Instruction.LoadUpperImmediate(dst, immediate));
+            items.add(new Instruction.LoadImmediate(opcode, dst, immediate));
         }
 
         public void emit(OpCode.Load opcode, Register val, Register addr, int imm) {

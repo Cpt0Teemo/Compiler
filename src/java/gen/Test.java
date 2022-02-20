@@ -77,7 +77,8 @@ public class Test {
                 Label.get("address")));
         assertEqual(
             AssemblyParser.parseAssemblyItem("lui $s0, 42"),
-            new Instruction.LoadUpperImmediate(
+            new Instruction.LoadImmediate(
+                OpCode.LUI,
                 Register.Arch.s0,
                 42));
         assertEqual(

@@ -320,14 +320,14 @@ public abstract class Instruction extends AssemblyItem {
     }
 
     /**
-     * An instruction that loads its immediate operand into the upper half of its destination register.
+     * An instruction that loads its immediate operand a destination register.
      */
-    public static final class LoadUpperImmediate extends Instruction {
+    public static final class LoadImmediate extends Instruction {
         public final Register dst;
         public final int imm;
 
-        public LoadUpperImmediate(Register dst, int imm) {
-            super(OpCode.LUI);
+        public LoadImmediate(OpCode.LoadImmediate opcode, Register dst, int imm) {
+            super(opcode);
             this.dst = dst;
             this.imm = imm;
         }
@@ -348,16 +348,21 @@ public abstract class Instruction extends AssemblyItem {
         }
 
         @Override
+        public String toString() {
+            return opcode + " " + dst + "," + imm;
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            LoadUpperImmediate that = (LoadUpperImmediate) o;
-            return imm == that.imm && dst.equals(that.dst);
+            LoadImmediate that = (LoadImmediate) o;
+            return opcode == that.opcode && imm == that.imm && dst.equals(that.dst);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(dst, imm);
+            return Objects.hash(opcode, dst, imm);
         }
     }
 
@@ -397,12 +402,12 @@ public abstract class Instruction extends AssemblyItem {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             LoadAddress that = (LoadAddress) o;
-            return label.equals(that.label) && dst.equals(that.dst);
+            return opcode == that.opcode && label.equals(that.label) && dst.equals(that.dst);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(label, dst);
+            return Objects.hash(opcode, label, dst);
         }
     }
 

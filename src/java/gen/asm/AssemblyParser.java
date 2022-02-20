@@ -148,9 +148,10 @@ public final class AssemblyParser {
                             memOperand.getKey(),
                             memOperand.getValue());
 
-                case LOAD_UPPER_IMMEDIATE:
+                case LOAD_IMMEDIATE:
                     checkArity(args, 2, line);
-                    return new Instruction.LoadUpperImmediate(
+                    return new Instruction.LoadImmediate(
+                            (OpCode.LoadImmediate) opcode,
                             parseRegister(args.get(0)),
                             parseImmediate(args.get(1)));
 

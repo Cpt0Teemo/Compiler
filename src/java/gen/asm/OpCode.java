@@ -47,7 +47,7 @@ public abstract class OpCode {
         /**
          * The special load upper immediate opcode. This is a type I opcode that discards its source register.
          */
-        LOAD_UPPER_IMMEDIATE,
+        LOAD_IMMEDIATE,
 
         /**
          * The load address pseudo-op.
@@ -172,7 +172,8 @@ public abstract class OpCode {
      */
     public static final List<NullaryIntrinsic> nullaryIntrinsicOps = List.of(PUSH_REGISTERS, POP_REGISTERS);
 
-    public static final LoadUpperImmediate LUI = new LoadUpperImmediate("lui");
+    public static final LoadImmediate LUI = new LoadImmediate("lui");
+    public static final LoadImmediate LI = new LoadImmediate("li");
     public static final LoadAddress LA = new LoadAddress("la");
 
     /**
@@ -187,7 +188,7 @@ public abstract class OpCode {
                 loadOps.stream().map(x -> (OpCode) x),
                 storeOps.stream().map(x -> (OpCode) x),
                 nullaryIntrinsicOps.stream().map(x -> (OpCode) x),
-                Stream.of(LUI, LA)
+                Stream.of(LUI, LI, LA)
         ).flatMap(s -> s).toList();
     }
 
@@ -292,14 +293,14 @@ public abstract class OpCode {
     /**
      * An opcode for the load upper immediate (lui) instruction.
      */
-    public static final class LoadUpperImmediate extends OpCode {
-        private LoadUpperImmediate(String mnemonic) {
+    public static final class LoadImmediate extends OpCode {
+        private LoadImmediate(String mnemonic) {
             super(mnemonic);
         }
 
         @Override
         public Kind kind() {
-            return Kind.LOAD_UPPER_IMMEDIATE;
+            return Kind.LOAD_IMMEDIATE;
         }
     }
 
