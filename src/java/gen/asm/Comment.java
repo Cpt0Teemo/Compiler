@@ -3,7 +3,7 @@ package gen.asm;
 import java.util.Objects;
 
 /**
- * A comment in an assembly program. Comments do not change the meaning of a program, but may aid humans in their
+ * A comment in an assembly program. Comments do not change the meaning of programs, but may aid humans in their
  * understanding of programs.
  */
 public class Comment extends AssemblyItem {

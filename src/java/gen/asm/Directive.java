@@ -24,7 +24,7 @@ public final class Directive extends AssemblyItem {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        gen.asm.Directive directive = (gen.asm.Directive) o;
+        Directive directive = (Directive) o;
         return Objects.equals(name, directive.name);
     }
 

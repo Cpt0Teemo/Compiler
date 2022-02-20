@@ -5,9 +5,9 @@ import java.util.HashMap;
 /**
  * A label in a MIPS assembly program.
  *
- * {@link gen.asm.Label} instances are flyweights. That is, the class' design makes it so that (barring multithreading
- * or reflection shenanigans) there can be at most one {@link gen.asm.Label} instance per name. Use {@link #create(String)}
- * and {@link #create()} to generate fresh {@link gen.asm.Label} instances.
+ * {@link Label} instances are flyweights. That is, the class' design makes it so that (barring multithreading
+ * or reflection shenanigans) there can be at most one {@link Label} instance per name. Use {@link #create(String)}
+ * and {@link #create()} to generate fresh {@link Label} instances.
  */
 public final class Label extends AssemblyItem {
     /**
@@ -28,25 +28,25 @@ public final class Label extends AssemblyItem {
     }
 
     // This hash map interns flyweight instances to ensure that no two Virtual instances have the same name.
-    private static final HashMap<String, gen.asm.Label> instances = new HashMap<>();
+    private static final HashMap<String, Label> instances = new HashMap<>();
 
     /**
      * Gets the unique label for a given name.
      *
      * @param name The label's name.
-     * @return The unique {@link gen.asm.Label} instance with name {@code name}.
+     * @return The unique {@link Label} instance with name {@code name}.
      */
-    public static gen.asm.Label get(String name) {
-        return instances.computeIfAbsent(name, gen.asm.Label::new);
+    public static Label get(String name) {
+        return instances.computeIfAbsent(name, Label::new);
     }
 
     /**
      * Creates a fresh label with a unique name.
      *
      * @param nameSuffix A suffix to append to the label's name.
-     * @return A unique {@link gen.asm.Label} instance.
+     * @return A unique {@link Label} instance.
      */
-    public static gen.asm.Label create(String nameSuffix) {
+    public static Label create(String nameSuffix) {
         int counter = instances.size();
         String draftName;
         do {
@@ -59,9 +59,9 @@ public final class Label extends AssemblyItem {
     /**
      * Creates a fresh label with a unique name.
      *
-     * @return A unique {@link gen.asm.Label} instance.
+     * @return A unique {@link Label} instance.
      */
-    public static gen.asm.Label create() {
+    public static Label create() {
         return create("");
     }
 }
