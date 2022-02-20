@@ -1,28 +1,79 @@
 package gen.asm;
 
+import java.util.HashMap;
+import java.util.List;
+
 /**
- * @author cdubach
+ * A register, as seen from the compiler's point of view. Registers can be either architectural (part of the ISA) or
+ * virtual (a fiction the compiler maintains until register allocation kicks in).
  */
 public abstract class Register {
 
+    /**
+     * Tells if this register is virtual.
+     * @return {@code true} if this register represents a virtual register, {@code false} if it represents a register
+     * defined by the MIPS ISA.
+     */
     abstract public boolean isVirtual();
 
+    /**
+     * A virtual register. That is, a pseudo-register the compiler uses for internal purposes. Virtual registers are
+     * translated to architectural registers ({@link Arch}) by the register allocator.
+     *
+     * {@link Virtual} instances are flyweights. That is, the class' design makes it so that (barring multithreading
+     * or reflection shenanigans) there can be at most one {@link Virtual} instance per name.  Use {@link #create()} to
+     * generate fresh {@link Virtual} instances.
+     */
     static public class Virtual extends Register {
-        private static int cnt = 0;
-        private final int id;
-        public Virtual() {
-            this.id = cnt++;
+
+        /**
+         * The virtual register's name. This name is unique: no two {@link Virtual} instances will have the same name.
+         */
+        public final String name;
+
+        private Virtual(String name) {
+            this.name = name;
         }
+
         public String toString() {
-            return "v"+id;
+            return name;
         }
+
         public boolean isVirtual() {
             return true;
+        }
+
+        // This hash map interns flyweight instances to ensure that no two Virtual instances have the same name.
+        private static final HashMap<String, Virtual> instances = new HashMap<>();
+
+        /**
+         * Gets the unique virtual register for a given name.
+         * @param name The virtual register's name.
+         * @return The unique {@link Virtual} instance with name {@code name}.
+         */
+        public static Virtual get(String name)
+        {
+            return instances.computeIfAbsent(name, Virtual::new);
+        }
+
+        /**
+         * Creates a fresh virtual register with a unique name.
+         * @return A unique {@link Virtual} instance.
+         */
+        public static Virtual create()
+        {
+            int counter = instances.size();
+            String draftName;
+            do {
+                draftName = "v" + counter;
+                counter++;
+            } while (instances.containsKey(draftName));
+            return get(draftName);
         }
     }
 
     /**
-     * Architectural registers.
+     * An architectural register. That is, one of the registers described by the MIPS ISA.
      */
     static public class Arch extends Register {
 
@@ -71,6 +122,16 @@ public abstract class Register {
         public boolean isVirtual() {
             return false;
         }
-    }
 
+        /**
+         * A list of all architectural registers known to the compiler.
+         */
+        public static final List<Arch> allRegisters = List.of(
+            zero,
+            v0, v1,
+            a0, a1, a2, a3,
+            t0, t1, t2, t3, t4, t5, t6, t7, t8, t9,
+            s0, s1, s2, s3, s4, s5, s6, s7,
+            gp, sp, fp, ra);
+    }
 }

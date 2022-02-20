@@ -21,6 +21,19 @@ public abstract class AssemblyItem {
         public void accept(AssemblyItemVisitor v) {
             v.visitComment(this);
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Comment comment1 = (Comment) o;
+            return comment.equals(comment1.comment);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(comment);
+        }
     }
 
     public static class Directive extends AssemblyItem {
@@ -37,15 +50,17 @@ public abstract class AssemblyItem {
             v.visitDirective(this);
         }
 
-        static public class Space extends Directive {
-            private final int size;
-            public Space(int size) {
-                super("space");
-                this.size = size;
-            }
-            public String toString() {
-                return super.toString()+" "+size;
-            }
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Directive directive = (Directive) o;
+            return Objects.equals(name, directive.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name);
         }
     }
 
@@ -138,6 +153,17 @@ public abstract class AssemblyItem {
                     Intrinsic.OpCode.intrinsicOps().stream().map(x -> (OpCode)x),
                     Stream.of(LoadUpperImmediate.opcode, LoadAddress.opcode)
                 ).flatMap(s -> s).toList();
+            }
+
+            /**
+             * Tries to interpret a mnemonic as an opcode.
+             * @param mnemonic The mnemonic to interpret.
+             * @return An opcode corresponding to {@code mnemonic} if the latter is well-understood; otherwise,
+             * {@link Optional#empty()}.
+             */
+            public static Optional<OpCode> tryParse(String mnemonic)
+            {
+                return allOps().stream().filter(x -> x.mnemonic.equals(mnemonic)).findAny();
             }
         }
 
@@ -246,6 +272,19 @@ public abstract class AssemblyItem {
                 regMap.getOrDefault(src1,src1),
                 regMap.getOrDefault(src2,src2));
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            RInstruction that = (RInstruction) o;
+            return dst.equals(that.dst) && src1.equals(that.src1) && src2.equals(that.src2);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(dst, src1, src2);
+        }
     }
 
     /**
@@ -304,6 +343,19 @@ public abstract class AssemblyItem {
 
         public Branch rebuild(Map<Register,Register> regMap) {
             return new Branch((OpCode)opcode, regMap.getOrDefault(src1,src1),regMap.getOrDefault(src2,src2), label);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Branch branch = (Branch) o;
+            return label.equals(branch.label) && src1.equals(branch.src1) && src2.equals(branch.src2);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(label, src1, src2);
         }
     }
 
@@ -366,6 +418,19 @@ public abstract class AssemblyItem {
 
         public IInstruction rebuild(Map<Register,Register> regMap) {
             return new IInstruction((OpCode)opcode, regMap.getOrDefault(dst, dst),regMap.getOrDefault(src, src), imm);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            IInstruction that = (IInstruction) o;
+            return imm == that.imm && dst.equals(that.dst) && src.equals(that.src);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(imm, dst, src);
         }
     }
 
@@ -430,6 +495,19 @@ public abstract class AssemblyItem {
 
         @Override
         public String toString() { return opcode + " " + label; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Jump jump = (Jump) o;
+            return label.equals(jump.label);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(label);
+        }
     }
 
     public abstract static class MemIndirect extends Instruction {
@@ -444,7 +522,20 @@ public abstract class AssemblyItem {
         }
 
         public String toString() {
-            return opcode + " " + op1 + "," + imm + "("+ op2 + ")";
+            return opcode + " " + op1 + "," + imm + "(" + op2 + ")";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MemIndirect that = (MemIndirect) o;
+            return imm == that.imm && op1.equals(that.op1) && op2.equals(that.op2);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(op1, op2, imm);
         }
     }
 
@@ -570,6 +661,19 @@ public abstract class AssemblyItem {
         public Instruction rebuild(Map<Register, Register> regMap) {
             return this;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            LoadUpperImmediate that = (LoadUpperImmediate) o;
+            return imm == that.imm && dst.equals(that.dst);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(dst, imm);
+        }
     }
 
     /**
@@ -608,6 +712,19 @@ public abstract class AssemblyItem {
 
         public LoadAddress rebuild(Map<Register,Register> regMap) {
             return new LoadAddress(regMap.getOrDefault(dst,dst),label);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            LoadAddress that = (LoadAddress) o;
+            return label.equals(that.label) && dst.equals(that.dst);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(label, dst);
         }
     }
 
@@ -670,24 +787,67 @@ public abstract class AssemblyItem {
         }
     }
 
+    /**
+     * A label in a MIPS assembly program.
+     *
+     * {@link Label} instances are flyweights. That is, the class' design makes it so that (barring multithreading
+     * or reflection shenanigans) there can be at most one {@link Label} instance per name. Use {@link #create(String)}
+     * and {@link #create()} to generate fresh {@link Label} instances.
+     */
     public static class Label extends AssemblyItem {
-        private static int cnt = 0;
-        private final int id = cnt++;
-        private final String name;
-        public Label() {
-            this.name = "";
-        }
-        public Label(String name) {
+        /**
+         * The label's unique name.
+         */
+        public final String name;
+
+        private Label(String name) {
             this.name = name;
         }
 
         public String toString() {
-            return "label_"+id+"_"+name;
+            return name;
         }
 
         public void accept(AssemblyItemVisitor v) {
             v.visitLabel(this);
         }
 
+        // This hash map interns flyweight instances to ensure that no two Virtual instances have the same name.
+        private static final HashMap<String, Label> instances = new HashMap<>();
+
+        /**
+         * Gets the unique label for a given name.
+         * @param name The label's name.
+         * @return The unique {@link Label} instance with name {@code name}.
+         */
+        public static Label get(String name)
+        {
+            return instances.computeIfAbsent(name, Label::new);
+        }
+
+        /**
+         * Creates a fresh label with a unique name.
+         * @param nameSuffix A suffix to append to the label's name.
+         * @return A unique {@link Label} instance.
+         */
+        public static Label create(String nameSuffix)
+        {
+            int counter = instances.size();
+            String draftName;
+            do {
+                draftName = "label_" + counter + "_" + nameSuffix;
+                counter++;
+            } while (instances.containsKey(draftName));
+            return get(draftName);
+        }
+
+        /**
+         * Creates a fresh label with a unique name.
+         * @return A unique {@link Label} instance.
+         */
+        public static Label create()
+        {
+            return create("");
+        }
     }
 }

@@ -24,7 +24,7 @@ public class NaiveRegAlloc {
                         insn.registers().forEach(reg -> {
                             if (reg instanceof Register.Virtual) {
                                 Register.Virtual vr = (Register.Virtual) reg;
-                                AssemblyItem.Label l = new AssemblyItem.Label(vr.toString());
+                                AssemblyItem.Label l = AssemblyItem.Label.create(vr.toString());
                                 vrMap.put(vr, l);
                             }
                         });
@@ -95,7 +95,7 @@ public class NaiveRegAlloc {
                 dataSec.emit("Allocated labels for virtual registers");
                 vrMap.forEach((vr, lbl) -> {
                     dataSec.emit(lbl);
-                    dataSec.emit(new AssemblyItem.Directive.Space(4));
+                    dataSec.emit(new AssemblyItem.Directive("space " + 4));
                 });
 
                 // emit new instructions that don't use any virtual registers and transform push/pop registers instructions into real sequence of instructions
