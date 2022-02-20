@@ -114,8 +114,9 @@ public abstract class OpCode {
     public static final TernaryArithmetic NOR = new TernaryArithmetic("nor");
     public static final TernaryArithmetic SLT = new TernaryArithmetic("slt");
     public static final TernaryArithmetic SLTU = new TernaryArithmetic("sltu");
-    public static final TernaryArithmetic SLL = new TernaryArithmetic("sll");
-    public static final TernaryArithmetic SRL = new TernaryArithmetic("srl");
+    public static final TernaryArithmetic SLLV = new TernaryArithmetic("sllv");
+    public static final TernaryArithmetic SRLV = new TernaryArithmetic("srlv");
+    public static final TernaryArithmetic SRAV = new TernaryArithmetic("srav");
     public static final TernaryArithmetic SUB = new TernaryArithmetic("sub");
     public static final TernaryArithmetic SUBU = new TernaryArithmetic("subu");
 
@@ -123,7 +124,7 @@ public abstract class OpCode {
      * A list of all known ternary type R arithmetic opcodes.
      */
     public static final List<TernaryArithmetic> ternaryArithmeticOps =
-        List.of(ADD, ADDU, AND, JR, NOR, SLT, SLTU, SLL, SRL, SUB, SUBU);
+        List.of(ADD, ADDU, AND, JR, NOR, SLT, SLTU, SLLV, SRLV, SRAV, SUB, SUBU);
 
     public static final BinaryArithmetic DIV = new BinaryArithmetic("div");
     public static final BinaryArithmetic DIVU = new BinaryArithmetic("divu");
