@@ -99,13 +99,26 @@ public final class AssemblyParser {
                     checkArity(args, 2, line);
                     return new Instruction.LoadAddress(parseRegister(args.get(0)), parseLabel(args.get(1)));
 
-                case CORE_ARITHMETIC:
+                case TERNARY_ARITHMETIC:
                     checkArity(args, 3, line);
-                    return new Instruction.CoreArithmetic(
-                            (OpCode.CoreArithmetic)opcode,
+                    return new Instruction.TernaryArithmetic(
+                            (OpCode.TernaryArithmetic)opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseRegister(args.get(2)));
+
+                case BINARY_ARITHMETIC:
+                    checkArity(args, 2, line);
+                    return new Instruction.BinaryArithmetic(
+                            (OpCode.BinaryArithmetic)opcode,
+                            parseRegister(args.get(0)),
+                            parseRegister(args.get(1)));
+
+                case UNARY_ARITHMETIC:
+                    checkArity(args, 1, line);
+                    return new Instruction.UnaryArithmetic(
+                            (OpCode.UnaryArithmetic)opcode,
+                            parseRegister(args.get(0)));
 
                 case JUMP:
                     checkArity(args, 1, line);

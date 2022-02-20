@@ -23,9 +23,19 @@ public class AssemblyProgram {
             items.add(instruction);
         }
 
-        public void emit(OpCode.CoreArithmetic opcode, Register dst, Register src1, Register src2) {
+        public void emit(OpCode.TernaryArithmetic opcode, Register dst, Register src1, Register src2) {
             assert this.type == Type.TEXT;
-            items.add(new Instruction.CoreArithmetic(opcode, dst, src1, src2));
+            items.add(new Instruction.TernaryArithmetic(opcode, dst, src1, src2));
+        }
+
+        public void emit(OpCode.BinaryArithmetic opcode, Register src1, Register src2) {
+            assert this.type == Type.TEXT;
+            items.add(new Instruction.BinaryArithmetic(opcode, src1, src2));
+        }
+
+        public void emit(OpCode.UnaryArithmetic opcode, Register dst) {
+            assert this.type == Type.TEXT;
+            items.add(new Instruction.UnaryArithmetic(opcode, dst));
         }
 
         public void emit(OpCode.Branch opcode, Register src1, Register src2, Label label) {

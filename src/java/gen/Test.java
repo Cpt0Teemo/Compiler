@@ -46,7 +46,7 @@ public class Test {
         assertEqual(AssemblyParser.parseAssemblyItem(".space 4"), new Directive("space 4"));
         assertEqual(
             AssemblyParser.parseAssemblyItem("add $t0, v0, $t2"),
-            new Instruction.CoreArithmetic(
+            new Instruction.TernaryArithmetic(
                 OpCode.ADD,
                 Register.Arch.t0,
                 Register.Virtual.get("v0"),
@@ -95,6 +95,17 @@ public class Test {
                 Register.Arch.t0,
                 Register.Arch.t1,
                 16));
+        assertEqual(
+            AssemblyParser.parseAssemblyItem("multu $t0, $t1"),
+            new Instruction.BinaryArithmetic(
+                OpCode.MULTU,
+                Register.Arch.t0,
+                Register.Arch.t1));
+        assertEqual(
+            AssemblyParser.parseAssemblyItem("mfhi $t0"),
+            new Instruction.UnaryArithmetic(
+                OpCode.MFHI,
+                Register.Arch.t0));
         assertEqual(
             AssemblyParser.parseAssemblyItem("pushRegisters"),
             Instruction.NullaryIntrinsic.pushRegisters);

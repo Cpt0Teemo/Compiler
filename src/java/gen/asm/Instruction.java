@@ -44,14 +44,14 @@ public abstract class Instruction extends AssemblyItem {
     }
 
     /**
-     * A core arithmetic instruction that takes three register arguments. This is a type R instruction.
+     * A type R arithmetic instruction that takes three register arguments.
      */
-    public static final class CoreArithmetic extends Instruction {
+    public static final class TernaryArithmetic extends Instruction {
         public final Register dst;
         public final Register src1;
         public final Register src2;
 
-        public CoreArithmetic(OpCode.CoreArithmetic opcode, Register dst, Register src1, Register src2) {
+        public TernaryArithmetic(OpCode.TernaryArithmetic opcode, Register dst, Register src1, Register src2) {
             super(opcode);
             this.dst = dst;
             this.src1 = src1;
@@ -62,35 +62,122 @@ public abstract class Instruction extends AssemblyItem {
             return opcode + " " + dst + "," + src1 + "," + src2;
         }
 
-
         public Register def() {
             return dst;
         }
-
 
         public List<Register> uses() {
             return List.of(src1, src2);
         }
 
-        public CoreArithmetic rebuild(Map<Register,Register> regMap) {
-            return new CoreArithmetic(
-                (OpCode.CoreArithmetic)opcode,
+        public TernaryArithmetic rebuild(Map<Register,Register> regMap) {
+            return new TernaryArithmetic(
+                (OpCode.TernaryArithmetic)opcode,
                 regMap.getOrDefault(dst, dst),
-                regMap.getOrDefault(src1,src1),
-                regMap.getOrDefault(src2,src2));
+                regMap.getOrDefault(src1, src1),
+                regMap.getOrDefault(src2, src2));
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            CoreArithmetic that = (CoreArithmetic) o;
-            return dst.equals(that.dst) && src1.equals(that.src1) && src2.equals(that.src2);
+            TernaryArithmetic that = (TernaryArithmetic) o;
+            return opcode == that.opcode && dst.equals(that.dst) && src1.equals(that.src1) && src2.equals(that.src2);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(dst, src1, src2);
+            return Objects.hash(opcode, dst, src1, src2);
+        }
+    }
+
+    /**
+     * A type R arithmetic instruction that takes two register arguments.
+     */
+    public static final class BinaryArithmetic extends Instruction {
+        public final Register src1;
+        public final Register src2;
+
+        public BinaryArithmetic(OpCode.BinaryArithmetic opcode, Register src1, Register src2) {
+            super(opcode);
+            this.src1 = src1;
+            this.src2 = src2;
+        }
+
+        public String toString() {
+            return opcode + " " + src1 + "," + src2;
+        }
+
+        public Register def() {
+            return null;
+        }
+
+        public List<Register> uses() {
+            return List.of(src1, src2);
+        }
+
+        public BinaryArithmetic rebuild(Map<Register,Register> regMap) {
+            return new BinaryArithmetic(
+                    (OpCode.BinaryArithmetic)opcode,
+                    regMap.getOrDefault(src1, src1),
+                    regMap.getOrDefault(src2, src2));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BinaryArithmetic that = (BinaryArithmetic) o;
+            return opcode == that.opcode && src1.equals(that.src1) && src2.equals(that.src2);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(opcode, src1, src2);
+        }
+    }
+
+    /**
+     * A type R arithmetic instruction that takes one register argument.
+     */
+    public static final class UnaryArithmetic extends Instruction {
+        public final Register dst;
+
+        public UnaryArithmetic(OpCode.UnaryArithmetic opcode, Register dst) {
+            super(opcode);
+            this.dst = dst;
+        }
+
+        public String toString() {
+            return opcode + " " + dst;
+        }
+
+        public Register def() {
+            return dst;
+        }
+
+        public List<Register> uses() {
+            return List.of();
+        }
+
+        public UnaryArithmetic rebuild(Map<Register,Register> regMap) {
+            return new UnaryArithmetic(
+                    (OpCode.UnaryArithmetic)opcode,
+                    regMap.getOrDefault(dst, dst));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UnaryArithmetic that = (UnaryArithmetic) o;
+            return opcode == that.opcode && dst.equals(that.dst);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(opcode, dst);
         }
     }
 
@@ -160,9 +247,8 @@ public abstract class Instruction extends AssemblyItem {
         }
 
         public String toString() {
-            return opcode+" "+ dst + "," + src + "," + imm;
+            return opcode + " " + dst + "," + src + "," + imm;
         }
-
 
         public Register def() {
             return dst;
@@ -186,12 +272,12 @@ public abstract class Instruction extends AssemblyItem {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ArithmeticWithImmediate that = (ArithmeticWithImmediate) o;
-            return imm == that.imm && dst.equals(that.dst) && src.equals(that.src);
+            return opcode == that.opcode && imm == that.imm && dst.equals(that.dst) && src.equals(that.src);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(imm, dst, src);
+            return Objects.hash(opcode, imm, dst, src);
         }
     }
 
@@ -237,12 +323,12 @@ public abstract class Instruction extends AssemblyItem {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Jump jump = (Jump) o;
-            return label.equals(jump.label);
+            return opcode == jump.opcode && label.equals(jump.label);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(label);
+            return Objects.hash(opcode, label);
         }
     }
 
@@ -270,12 +356,12 @@ public abstract class Instruction extends AssemblyItem {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             MemIndirect that = (MemIndirect) o;
-            return imm == that.imm && op1.equals(that.op1) && op2.equals(that.op2);
+            return opcode == that.opcode && imm == that.imm && op1.equals(that.op1) && op2.equals(that.op2);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(op1, op2, imm);
+            return Objects.hash(opcode, op1, op2, imm);
         }
     }
 
@@ -383,11 +469,9 @@ public abstract class Instruction extends AssemblyItem {
             return "la " + dst + "," + label;
         }
 
-
         public Register def() {
             return dst;
         }
-
 
         public List<Register> uses() {
             return List.of();

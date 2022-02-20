@@ -15,9 +15,19 @@ public abstract class OpCode {
      */
     public enum Kind {
         /**
-         * A type R opcode.
+         * A type R opcode that takes three register operands.
          */
-        CORE_ARITHMETIC,
+        TERNARY_ARITHMETIC,
+
+        /**
+         * A type R opcode that takes two register operands.
+         */
+        BINARY_ARITHMETIC,
+
+        /**
+         * A type R opcode that takes one register operand.
+         */
+        UNARY_ARITHMETIC,
 
         /**
          * A type J opcode.
@@ -97,23 +107,43 @@ public abstract class OpCode {
         return allOps().stream().filter(x -> x.mnemonic.equals(mnemonic)).findAny();
     }
 
-    public static final CoreArithmetic ADD = new CoreArithmetic("add");
-    public static final CoreArithmetic ADDU = new CoreArithmetic("addu");
-    public static final CoreArithmetic AND = new CoreArithmetic("and");
-    public static final CoreArithmetic JR = new CoreArithmetic("jr");
-    public static final CoreArithmetic NOR = new CoreArithmetic("nor");
-    public static final CoreArithmetic SLT = new CoreArithmetic("slt");
-    public static final CoreArithmetic SLTU = new CoreArithmetic("sltu");
-    public static final CoreArithmetic SLL = new CoreArithmetic("sll");
-    public static final CoreArithmetic SRL = new CoreArithmetic("srl");
-    public static final CoreArithmetic SUB = new CoreArithmetic("sub");
-    public static final CoreArithmetic SUBU = new CoreArithmetic("subu");
+    public static final TernaryArithmetic ADD = new TernaryArithmetic("add");
+    public static final TernaryArithmetic ADDU = new TernaryArithmetic("addu");
+    public static final TernaryArithmetic AND = new TernaryArithmetic("and");
+    public static final TernaryArithmetic JR = new TernaryArithmetic("jr");
+    public static final TernaryArithmetic NOR = new TernaryArithmetic("nor");
+    public static final TernaryArithmetic SLT = new TernaryArithmetic("slt");
+    public static final TernaryArithmetic SLTU = new TernaryArithmetic("sltu");
+    public static final TernaryArithmetic SLL = new TernaryArithmetic("sll");
+    public static final TernaryArithmetic SRL = new TernaryArithmetic("srl");
+    public static final TernaryArithmetic SUB = new TernaryArithmetic("sub");
+    public static final TernaryArithmetic SUBU = new TernaryArithmetic("subu");
 
     /**
-     * A list of all known core arithmetic opcodes.
+     * A list of all known ternary type R arithmetic opcodes.
      */
-    public static final List<CoreArithmetic> coreArithmeticOps =
+    public static final List<TernaryArithmetic> ternaryArithmeticOps =
         List.of(ADD, ADDU, AND, JR, NOR, SLT, SLTU, SLL, SRL, SUB, SUBU);
+
+    public static final BinaryArithmetic DIV = new BinaryArithmetic("div");
+    public static final BinaryArithmetic DIVU = new BinaryArithmetic("divu");
+    public static final BinaryArithmetic MULT = new BinaryArithmetic("mult");
+    public static final BinaryArithmetic MULTU = new BinaryArithmetic("multu");
+
+    /**
+     * A list of all known binary type R arithmetic opcodes.
+     */
+    public static final List<BinaryArithmetic> binaryArithmeticOps =
+        List.of(DIV, DIVU, MULT, MULTU);
+
+    public static final UnaryArithmetic MFHI = new UnaryArithmetic("mfhi");
+    public static final UnaryArithmetic MFLO = new UnaryArithmetic("mflo");
+
+    /**
+     * A list of all known unary type R arithmetic opcodes.
+     */
+    public static final List<UnaryArithmetic> unaryArithmeticOps =
+        List.of(MFHI, MFLO);
 
     public static final ArithmeticWithImmediate ADDI = new ArithmeticWithImmediate("addi");
     public static final ArithmeticWithImmediate ADDIU = new ArithmeticWithImmediate("addiu");
@@ -181,7 +211,9 @@ public abstract class OpCode {
      */
     public static List<OpCode> allOps() {
         return Stream.of(
-                coreArithmeticOps.stream().map(x -> (OpCode) x),
+                ternaryArithmeticOps.stream().map(x -> (OpCode) x),
+                binaryArithmeticOps.stream().map(x -> (OpCode) x),
+                unaryArithmeticOps.stream().map(x -> (OpCode) x),
                 arithmeticWithImmediateOps.stream().map(x -> (OpCode) x),
                 branchOps.stream().map(x -> (OpCode) x),
                 jumpOps.stream().map(x -> (OpCode) x),
@@ -193,16 +225,44 @@ public abstract class OpCode {
     }
 
     /**
-     * An opcode for core arithmetic instructions.
+     * An opcode for ternary type R arithmetic instructions.
      */
-    public static final class CoreArithmetic extends OpCode {
-        private CoreArithmetic(String mnemonic) {
+    public static final class TernaryArithmetic extends OpCode {
+        private TernaryArithmetic(String mnemonic) {
             super(mnemonic);
         }
 
         @Override
         public Kind kind() {
-            return Kind.CORE_ARITHMETIC;
+            return Kind.TERNARY_ARITHMETIC;
+        }
+    }
+
+    /**
+     * An opcode for binary type R arithmetic instructions.
+     */
+    public static final class BinaryArithmetic extends OpCode {
+        private BinaryArithmetic(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.BINARY_ARITHMETIC;
+        }
+    }
+
+    /**
+     * An opcode for unary type R arithmetic instructions.
+     */
+    public static final class UnaryArithmetic extends OpCode {
+        private UnaryArithmetic(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.UNARY_ARITHMETIC;
         }
     }
 
