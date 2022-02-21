@@ -3,7 +3,7 @@ package ast;
 public class Or extends BinOp {
 
     public Or(Expr left, Expr right) {
-        super(left, right, 8, true);
+        super(left, right);
     }
 
     @Override

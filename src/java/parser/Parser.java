@@ -282,7 +282,7 @@ public class Parser {
         else if(accept(TokenClass.WHILE)) {
             nextToken();
             expect(TokenClass.LPAR);
-            Expr condition = parseExp();
+            Expr condition = parseExpr1();
             expect(TokenClass.RPAR);
             Stmt insideLoop = parseStmt();
             return new While(condition, insideLoop);
@@ -290,7 +290,7 @@ public class Parser {
         else if (accept(TokenClass.IF)) {
             nextToken();
             expect(TokenClass.LPAR);
-            Expr condition = parseExp();
+            Expr condition = parseExpr1();
             expect(TokenClass.RPAR);
             Stmt ifStmt = parseStmt();
             Stmt elseStmt = null;
@@ -304,12 +304,12 @@ public class Parser {
             nextToken();
             Expr expr = null;
             if(isExp()) {
-                expr = parseExp();
+                expr = parseExpr1();
             }
             expect(TokenClass.SC);
             return new Return(expr);
         } else if(isExp()) {
-            Expr lExpr = parseExp();
+            Expr lExpr = parseExpr1();
             Expr rExpr = parseStmtPrime();
             if(rExpr == null)
                 return new ExprStmt(lExpr);
@@ -322,7 +322,7 @@ public class Parser {
     private Expr parseStmtPrime() {
         if(accept(TokenClass.ASSIGN)) {
             nextToken();
-            Expr expr = parseExp();
+            Expr expr = parseExpr1();
             expect(TokenClass.SC);
             return expr;
         } else if (accept(TokenClass.SC)){
@@ -335,6 +335,198 @@ public class Parser {
 
     private boolean isExp() {
         return expStart.contains(token.tokenClass);
+    }
+
+    private Expr parseExpr1() {
+        Expr lExpr = parseExpr2();
+
+        if(accept(TokenClass.LOGOR)) {
+            nextToken();
+            Expr rExpr = parseExpr1();
+            return new Or(lExpr, rExpr);
+        } else {
+            return lExpr;
+        }
+    }
+
+    private Expr parseExpr2() {
+        Expr lExpr = parseExpr3();
+
+        if(accept(TokenClass.LOGAND)) {
+            nextToken();
+            Expr rExpr = parseExpr2();
+            return new And(lExpr, rExpr);
+        } else {
+            return lExpr;
+        }
+    }
+
+    private Expr parseExpr3() {
+        Expr lExpr = parseExpr4();
+
+        if(accept(TokenClass.EQ)) {
+            nextToken();
+            Expr rExpr = parseExpr3();
+            return new Eq(lExpr, rExpr);
+        } else if(accept(TokenClass.NE)) {
+            nextToken();
+            Expr rExpr = parseExpr3();
+            return new Ne(lExpr, rExpr);
+        } else {
+            return lExpr;
+        }
+    }
+
+    private Expr parseExpr4() {
+        Expr lExpr = parseExpr5();
+
+        if(accept(TokenClass.LT)) {
+            nextToken();
+            Expr rExpr = parseExpr4();
+            return new Lt(lExpr, rExpr);
+        } else if(accept(TokenClass.GT)) {
+            nextToken();
+            Expr rExpr = parseExpr4();
+            return new Gt(lExpr, rExpr);
+        } else if(accept(TokenClass.LE)) {
+            nextToken();
+            Expr rExpr = parseExpr4();
+            return new Le(lExpr, rExpr);
+        } else if(accept(TokenClass.GE)) {
+            nextToken();
+            Expr rExpr = parseExpr4();
+            return new Ge(lExpr, rExpr);
+        } else {
+            return lExpr;
+        }
+    }
+
+    private Expr parseExpr5() {
+        Expr lExpr = parseExpr6();
+
+        if(accept(TokenClass.PLUS)) {
+            nextToken();
+            Expr rExpr = parseExpr5();
+            return new Add(lExpr, rExpr);
+        } else if(accept(TokenClass.MINUS)) {
+            nextToken();
+            Expr rExpr = parseExpr5();
+            return new Sub(lExpr, rExpr);
+        } else {
+            return lExpr;
+        }
+    }
+
+    private Expr parseExpr6() {
+        Expr lExpr = parseExpr7();
+
+        if(accept(TokenClass.ASTERIX)) {
+            nextToken();
+            Expr rExpr = parseExpr6();
+            return new Mul(lExpr, rExpr);
+        } else if(accept(TokenClass.DIV)) {
+            nextToken();
+            Expr rExpr = parseExpr6();
+            return new Div(lExpr, rExpr);
+        } else if(accept(TokenClass.REM)) {
+            nextToken();
+            Expr rExpr = parseExpr6();
+            return new Mod(lExpr, rExpr);
+        } else {
+            return lExpr;
+        }
+    }
+
+    private Expr parseExpr7() {
+        if(accept(TokenClass.PLUS)) {
+            nextToken();
+            Expr expr = parseExpr7();
+            return new Add(expr);
+        } else if(accept(TokenClass.MINUS)) {
+            nextToken();
+            Expr expr = parseExpr7();
+            return new Sub(expr);
+        } else if (accept(TokenClass.LPAR) && types.contains(lookAhead(1).tokenClass)) {
+            nextToken();
+            Type type = parseType();
+            expect(TokenClass.RPAR);
+            Expr rightExpr = parseExpr7();
+            return new TypeCastExpr(type, rightExpr);
+        } else if (accept(TokenClass.ASTERIX)) {
+            nextToken();
+            Expr rightExpr = parseExpr7();
+            return new ValueAtExpr(rightExpr);
+        } else if (accept(TokenClass.AND)) {
+            nextToken();
+            Expr rightExpr = parseExpr7();
+            return new AddressOfExpr(rightExpr);
+        } else {
+            return parseExpr8();
+        }
+    }
+
+    private Expr parseExpr8() {
+        Expr expr = parseTerminal();
+
+        if(expr instanceof VarExpr) {
+            if(accept(TokenClass.LSBR)) {
+                nextToken();
+                Expr arrayIndex = parseExpr1();
+                expect(TokenClass.RSBR);
+                return new ArrayAccessExpr(expr, arrayIndex);
+            } else if(accept(TokenClass.DOT)) {
+                nextToken();
+                String identifier = token.data;
+                expect(TokenClass.IDENTIFIER);
+                return new FieldAccessExpr(expr, identifier);
+            } else if(accept(TokenClass.LPAR)) {
+                nextToken();
+                List<Expr> params = new ArrayList<>();
+                if(!accept(TokenClass.RPAR)) {
+                    do {
+                        params.add(parseExpr1());
+                    } while(accept(TokenClass.COMMA));
+                }
+                expect(TokenClass.RPAR);
+                return new FunCallExpr(((VarExpr) expr).name, params);
+            }
+        }
+        return expr;
+    }
+
+    private Expr parseTerminal() {
+        TokenClass tokenClass = token.tokenClass;
+        switch (tokenClass) {
+            case LPAR:
+                nextToken();
+                Expr expr = parseExpr1();
+                expect(TokenClass.RPAR);
+                return expr;
+            case IDENTIFIER:
+                String varName = token.data;
+                nextToken();
+                return new VarExpr(varName);
+            case INT_LITERAL:
+                int value = Integer.parseInt(token.data);
+                nextToken();
+                return new IntLiteral(value);
+            case CHAR_LITERAL:
+                char character = token.data.charAt(0);
+                nextToken();
+                return new ChrLiteral(character);
+            case STRING_LITERAL:
+                String str = token.data;
+                nextToken();
+                return new StrLiteral(str);
+            case SIZEOF:
+                nextToken();
+                expect(TokenClass.LPAR);
+                Type type = parseType();
+                expect(TokenClass.RPAR);
+                return new SizeOfExpr(type);
+            default:
+                return null; //TODO
+        }
     }
 
     private Expr parseExp() {

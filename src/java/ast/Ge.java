@@ -3,7 +3,7 @@ package ast;
 public class Ge extends BinOp {
 
     public Ge(Expr left, Expr right) {
-        super(left, right, 5, true);
+        super(left, right);
     }
 
     @Override

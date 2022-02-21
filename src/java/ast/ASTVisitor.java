@@ -26,9 +26,20 @@ public interface ASTVisitor<T> {
     public T visitProgram(Program p);
     public T visitVarDecl(VarDecl vd);
     public T visitVarExpr(VarExpr v);
+    public T visitSizeOfExpr(SizeOfExpr so);
+
+    //Special Expressions
+    public T visitArrayAccessExpr(ArrayAccessExpr so);
+    public T visitFieldAccessExpr(FieldAccessExpr fa);
+    public T visitFunCallExpr(FunCallExpr fc);
+    public T visitTypeCastExpr(TypeCastExpr tc);
+    public T visitValueAtExpr(ValueAtExpr va);
+    public T visitAddressOfExpr(AddressOfExpr ao);
 
     //Types
     public T visitIntLiteral(IntLiteral i);
+    public T visitChrLiteral(ChrLiteral c);
+    public T visitStrLiteral(StrLiteral str);
 
     //Binary operators
     public T visitAdd(Add a);
@@ -45,5 +56,4 @@ public interface ASTVisitor<T> {
     public T visitOr(Or o);
     public T visitAnd(And a);
 
-    // to complete ... (should have one visit method for each concrete AST node class)
 }

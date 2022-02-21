@@ -3,7 +3,7 @@ package ast;
 public class Lt extends BinOp {
 
     public Lt(Expr left, Expr right) {
-        super(left, right, 5, true);
+        super(left, right);
     }
 
     @Override

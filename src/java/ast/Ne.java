@@ -3,7 +3,7 @@ package ast;
 public class Ne extends BinOp {
 
     public Ne(Expr left, Expr right) {
-        super(left, right, 6, true);
+        super(left, right);
     }
 
     @Override

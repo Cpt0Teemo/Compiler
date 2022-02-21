@@ -3,11 +3,11 @@ package ast;
 public class Add extends BinOp {
 
     public Add(Expr left, Expr right) {
-        super(left, right, 4, true);
+        super(left, right);
     }
 
     public Add(Expr right) {
-        super(new IntLiteral(0), right, 2, false);
+        super(new IntLiteral(0), right);
     }
 
     @Override

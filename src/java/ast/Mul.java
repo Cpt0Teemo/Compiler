@@ -3,7 +3,7 @@ package ast;
 public class Mul extends BinOp {
 
     public Mul(Expr left, Expr right) {
-        super(left, right, 3, true);
+        super(left, right);
     }
 
     @Override

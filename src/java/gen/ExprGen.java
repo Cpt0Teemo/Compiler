@@ -75,5 +75,120 @@ public class ExprGen implements ASTVisitor<Register> {
         return null;
     }
 
+    @Override
+    public Register visitSizeOfExpr(SizeOfExpr so) {
+        return null;
+    }
+
+    @Override
+    public Register visitArrayAccessExpr(ArrayAccessExpr so) {
+        return null;
+    }
+
+    @Override
+    public Register visitFieldAccessExpr(FieldAccessExpr fa) {
+        return null;
+    }
+
+    @Override
+    public Register visitFunCallExpr(FunCallExpr fc) {
+        return null;
+    }
+
+    @Override
+    public Register visitTypeCastExpr(TypeCastExpr tc) {
+        return null;
+    }
+
+    @Override
+    public Register visitValueAtExpr(ValueAtExpr va) {
+        return null;
+    }
+
+    @Override
+    public Register visitAddressOfExpr(AddressOfExpr ao) {
+        return null;
+    }
+
+    @Override
+    public Register visitIntLiteral(IntLiteral i) {
+        return null;
+    }
+
+    @Override
+    public Register visitChrLiteral(ChrLiteral c) {
+        return null;
+    }
+
+    @Override
+    public Register visitStrLiteral(StrLiteral str) {
+        return null;
+    }
+
+    @Override
+    public Register visitAdd(Add a) {
+        return null;
+    }
+
+    @Override
+    public Register visitSub(Sub s) {
+        return null;
+    }
+
+    @Override
+    public Register visitMul(Mul m) {
+        return null;
+    }
+
+    @Override
+    public Register visitDiv(Div d) {
+        return null;
+    }
+
+    @Override
+    public Register visitMod(Mod m) {
+        return null;
+    }
+
+    @Override
+    public Register visitGt(Gt g) {
+        return null;
+    }
+
+    @Override
+    public Register visitLt(Lt l) {
+        return null;
+    }
+
+    @Override
+    public Register visitGe(Ge g) {
+        return null;
+    }
+
+    @Override
+    public Register visitLe(Le l) {
+        return null;
+    }
+
+    @Override
+    public Register visitNe(Ne n) {
+        return null;
+    }
+
+    @Override
+    public Register visitEq(Eq e) {
+        return null;
+    }
+
+    @Override
+    public Register visitOr(Or o) {
+        return null;
+    }
+
+    @Override
+    public Register visitAnd(And a) {
+        return null;
+    }
+
     // TODO: to complete (only deal with Expression nodes, anything else should throw ShouldNotReach)
 }
