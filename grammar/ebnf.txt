@@ -33,21 +33,21 @@ assign     ::= "=" exp ";"
 
 block      ::= "{" (vardecl)* (stmt)* "}"
 
-exp        ::= "(" exp ")" exp'
-             | (IDENT | INT_LITERAL) exp'
-             | op exp exp'
-             | CHAR_LITERAL exp'
-             | STRING_LITERAL exp'
-             | valueat exp'
-             | addressof exp'
-             | funcall exp'
-             | sizeof exp'
-             | typecast exp'
+expr1         ::= expr2 (( "||" ) expr1 | e)
+expr2         ::= expr3 (( "&&" ) expr2 | e)
+expr3         ::= expr4 (( "==" |  "!=" ) expr3 | e)
+expr4         ::= expr5 (( ">" |  "<" |  "<=" |  ">=" ) expr4 | e)
+expr5         ::= expr6 (( "+" |  "-" ) expr5 | e)
+expr6         ::= expr7 (( "*" |  "/" | "%" ) expr6 | e)
+expr7         ::= (( op |  "(" type ")" | "*" | "&" ) expr7 | e)
+                | expr8                                                                     #Right associative
+expr8         ::= terminal (( funcall | "[" exp "]" | "." IDENT ) expr8 | e)
 
-exp'        ::= binop exp exp'
-              | "[" exp "]" exp' # Array access
-              | "." IDENT exp'  # Field access
-              | e           # Empty set
+terminal    ::= "(" exp ")"
+              | (IDENT | INT_LITERAL)
+              | CHAR_LITERAL
+              | STRING_LITERAL
+              | sizeof
 
 binop        ::= ">" | "<" | ">=" | "<=" | "!=" | "==" | "+" | "-" | "/" | "*" | "%" | "||" | "&&"   # binary operators
 op           ::= "-" | "+"
