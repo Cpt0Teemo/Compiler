@@ -39,7 +39,7 @@ expr3         ::= expr4 (( "==" |  "!=" ) expr3 | e)
 expr4         ::= expr5 (( ">" |  "<" |  "<=" |  ">=" ) expr4 | e)
 expr5         ::= expr6 (( "+" |  "-" ) expr5 | e)
 expr6         ::= expr7 (( "*" |  "/" | "%" ) expr6 | e)
-expr7         ::= (( op |  "(" type ")" | "*" | "&" ) expr7)
+expr7         ::= (( op |  typecast | "*" | "&" ) expr7)
                 | expr8                                                                     #Right associative
 expr8         ::= terminal (( funcall | "[" exp "]" | "." IDENT ) | e)
 
@@ -53,9 +53,7 @@ binop        ::= ">" | "<" | ">=" | "<=" | "!=" | "==" | "+" | "-" | "/" | "*" |
 op           ::= "-" | "+"
 
 funcall      ::= IDENT "(" [ exp ("," exp)* ] ")" # function call
-valueat      ::= "*" exp                          # Value at operator (pointer indirection)
-addressof    ::= "&" exp                          # Address-of operator
 sizeof       ::= "sizeof" "(" type ")"            # size of type
-typecast     ::= "(" type ")" exp                 # type casting
+typecast     ::= "(" type ")"                 # type casting
 
 

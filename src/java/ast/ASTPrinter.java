@@ -55,7 +55,8 @@ public class ASTPrinter implements ASTVisitor<Void> {
     @Override
     public Void visitReturn(Return r) {
         writer.print("Return(");
-        r.expr.accept(this);
+        if(r.expr != null)
+            r.expr.accept(this);
         writer.print(")");
         return null;
     }
@@ -389,7 +390,7 @@ public class ASTPrinter implements ASTVisitor<Void> {
     @Override
     public Void visitStructTypeDecl(StructTypeDecl st) {
         writer.print("StructTypeDecl(");
-        writer.print(st.name);
+        st.structType.accept(this);
         for (VarDecl varDecl: st.varDecls) {
             writer.print(",");
             varDecl.accept(this);
