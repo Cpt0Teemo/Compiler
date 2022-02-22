@@ -1,7 +1,6 @@
+// Authors: Jonathan Van der Cruysse, Christophe Dubach
+
 package gen.asm;
-
-
-import java.util.*;
 
 /**
  * A single item in an {@link AssemblyProgram.Section}. This typically corresponds to a line in the textual
@@ -9,5 +8,4 @@ import java.util.*;
  */
 public abstract class AssemblyItem {
     public abstract void accept(AssemblyItemVisitor v);
-
 }

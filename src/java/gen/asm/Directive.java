@@ -1,3 +1,5 @@
+// Authors: Jonathan Van der Cruysse, Christophe Dubach
+
 package gen.asm;
 
 import java.util.Objects;

@@ -1,3 +1,5 @@
+// Authors: Jonathan Van der Cruysse
+
 package gen.asm;
 
 import java.io.BufferedReader;
