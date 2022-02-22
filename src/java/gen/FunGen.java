@@ -34,7 +34,7 @@ public class FunGen implements ASTVisitor<Void> {
     public Void visitFunDecl(FunDecl p) {
 
         // Each function should be produced in its own section.
-        // This is is necessary for the register allocator.
+        // This is necessary for the register allocator.
         asmProg.newSection(AssemblyProgram.Section.Type.TEXT);
 
         // TODO: to complete:
