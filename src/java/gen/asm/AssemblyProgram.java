@@ -24,59 +24,55 @@ public class AssemblyProgram {
         }
 
         public void emit(OpCode.TernaryArithmetic opcode, Register dst, Register src1, Register src2) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.TernaryArithmetic(opcode, dst, src1, src2));
+            emit(new Instruction.TernaryArithmetic(opcode, dst, src1, src2));
         }
 
         public void emit(OpCode.BinaryArithmetic opcode, Register src1, Register src2) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.BinaryArithmetic(opcode, src1, src2));
+            emit(new Instruction.BinaryArithmetic(opcode, src1, src2));
         }
 
         public void emit(OpCode.UnaryArithmetic opcode, Register dst) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.UnaryArithmetic(opcode, dst));
+            emit(new Instruction.UnaryArithmetic(opcode, dst));
         }
 
-        public void emit(OpCode.Branch opcode, Register src1, Register src2, Label label) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.Branch(opcode, src1, src2, label));
+        public void emit(OpCode.BinaryBranch opcode, Register src1, Register src2, Label label) {
+            emit(new Instruction.BinaryBranch(opcode, src1, src2, label));
+        }
+
+        public void emit(OpCode.UnaryBranch opcode, Register src, Label label) {
+            emit(new Instruction.UnaryBranch(opcode, src, label));
+        }
+
+        public void emit(OpCode.Jump opcode, Label label) {
+            emit(new Instruction.Jump(opcode, label));
+        }
+
+        public void emit(OpCode.JumpRegister opcode, Register address) {
+            emit(new Instruction.JumpRegister(opcode, address));
         }
 
         public void emit(OpCode.ArithmeticWithImmediate opcode, Register dst, Register src, int imm) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.ArithmeticWithImmediate(opcode, dst, src, imm));
+            emit(new Instruction.ArithmeticWithImmediate(opcode, dst, src, imm));
         }
 
         public void emit(OpCode.LoadAddress ignoredOpcode, Register dst, Label label) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.LoadAddress(dst, label));
+            emit(new Instruction.LoadAddress(dst, label));
         }
 
         public void emit(OpCode.LoadImmediate opcode, Register dst, int immediate) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.LoadImmediate(opcode, dst, immediate));
+            emit(new Instruction.LoadImmediate(opcode, dst, immediate));
         }
 
         public void emit(OpCode.Load opcode, Register val, Register addr, int imm) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.Load(opcode, val, addr, imm));
+            emit(new Instruction.Load(opcode, val, addr, imm));
         }
 
         public void emit(OpCode.Store opcode, Register val, Register addr, int imm) {
-            assert this.type == Type.TEXT;
-            items.add(new Instruction.Store(opcode, val, addr, imm));
+            emit(new Instruction.Store(opcode, val, addr, imm));
         }
 
-        public void emit(OpCode.NullaryIntrinsic opcode) {
-            assert this.type == Type.TEXT;
-            if (opcode == OpCode.PUSH_REGISTERS) {
-                emit(Instruction.NullaryIntrinsic.pushRegisters);
-            } else if (opcode == OpCode.POP_REGISTERS) {
-                emit(Instruction.NullaryIntrinsic.popRegisters);
-            } else {
-                throw new Error("Cannot emit instruction for ill-understood intrinsic opcode " + opcode);
-            }
+        public void emit(OpCode.Nullary opcode) {
+            emit(Instruction.Nullary.create(opcode));
         }
 
 

@@ -118,7 +118,7 @@ public class NaiveRegAlloc {
                             }
                             public void visitInstruction(Instruction insn) {
 
-                                if (insn == Instruction.NullaryIntrinsic.pushRegisters) {
+                                if (insn == Instruction.Nullary.pushRegisters) {
                                     newSection.emit("Original instruction: pushRegisters");
                                     for (Label l : vrLabels) {
                                         // load content of memory at label into $t0
@@ -129,7 +129,7 @@ public class NaiveRegAlloc {
                                         newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
                                         newSection.emit(OpCode.SW, Register.Arch.t0, Register.Arch.sp, 0);
                                     }
-                                } else if (insn == Instruction.NullaryIntrinsic.popRegisters) {
+                                } else if (insn == Instruction.Nullary.popRegisters) {
                                     newSection.emit("Original instruction: popRegisters");
                                     for (Label l : reverseVrLabels) {
                                         // pop from stack into $t0

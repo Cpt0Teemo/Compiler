@@ -11,6 +11,7 @@ import java.util.*;
 public final class AssemblyParser {
     /**
      * Reads a MIPS assembly program from a buffered reader.
+     *
      * @param reader A buffered reader that reads from a textual MIPS assembly program.
      * @return An {@link AssemblyProgram} instance that corresponds to the text being read by {@code reader}.
      */
@@ -31,7 +32,9 @@ public final class AssemblyParser {
                     program.emitSection(currentSection);
                 }
                 currentSection = new AssemblyProgram.Section(
-                    item.equals(dataDirective) ? AssemblyProgram.Section.Type.DATA : AssemblyProgram.Section.Type.TEXT);
+                        item.equals(dataDirective)
+                                ? AssemblyProgram.Section.Type.DATA
+                                : AssemblyProgram.Section.Type.TEXT);
             } else {
                 if (currentSection == null) {
                     currentSection = new AssemblyProgram.Section(AssemblyProgram.Section.Type.TEXT);
@@ -49,6 +52,7 @@ public final class AssemblyParser {
 
     /**
      * Parses a string as an {@link AssemblyItem}.
+     *
      * @param line A single line of MIPS assembly.
      * @return An assembly item if the line is nonempty; otherwise, {@code null}.
      */
@@ -79,22 +83,23 @@ public final class AssemblyParser {
             if (opcodeAndArgs.length > 2) {
                 throw new Error("Expected an instruction; found " + line);
             } else if (opcodeAndArgs.length == 1) {
-                opcodeAndArgs = new String[] { opcodeAndArgs[0], "" };
+                opcodeAndArgs = new String[]{opcodeAndArgs[0], ""};
             }
 
             // Split and parse the arguments.
             var args = Arrays.stream(opcodeAndArgs[1].split(",")).map(String::trim).toList();
+            if (args.size() == 1 && args.get(0).isBlank()) {
+                args = List.of();
+            }
 
             // We now branch based on the opcode.
             var op = OpCode.tryParse(opcodeAndArgs[0].trim());
-            if (op.isEmpty())
-            {
+            if (op.isEmpty()) {
                 throw new Error("Ill-understood opcode " + opcodeAndArgs[0].trim());
             }
 
             var opcode = op.get();
-            switch (opcode.kind())
-            {
+            switch (opcode.kind()) {
                 case LOAD_ADDRESS:
                     checkArity(args, 2, line);
                     return new Instruction.LoadAddress(parseRegister(args.get(0)), parseLabel(args.get(1)));
@@ -102,7 +107,7 @@ public final class AssemblyParser {
                 case TERNARY_ARITHMETIC:
                     checkArity(args, 3, line);
                     return new Instruction.TernaryArithmetic(
-                            (OpCode.TernaryArithmetic)opcode,
+                            (OpCode.TernaryArithmetic) opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseRegister(args.get(2)));
@@ -110,34 +115,47 @@ public final class AssemblyParser {
                 case BINARY_ARITHMETIC:
                     checkArity(args, 2, line);
                     return new Instruction.BinaryArithmetic(
-                            (OpCode.BinaryArithmetic)opcode,
+                            (OpCode.BinaryArithmetic) opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)));
 
                 case UNARY_ARITHMETIC:
                     checkArity(args, 1, line);
                     return new Instruction.UnaryArithmetic(
-                            (OpCode.UnaryArithmetic)opcode,
+                            (OpCode.UnaryArithmetic) opcode,
                             parseRegister(args.get(0)));
 
                 case JUMP:
                     checkArity(args, 1, line);
                     return new Instruction.Jump(
-                            (OpCode.Jump)opcode,
+                            (OpCode.Jump) opcode,
                             parseLabel(args.get(0)));
 
-                case BRANCH:
+                case JUMP_REGISTER:
+                    checkArity(args, 1, line);
+                    return new Instruction.JumpRegister(
+                            (OpCode.JumpRegister) opcode,
+                            parseRegister(args.get(0)));
+
+                case BINARY_BRANCH:
                     checkArity(args, 3, line);
-                    return new Instruction.Branch(
-                            (OpCode.Branch)opcode,
+                    return new Instruction.BinaryBranch(
+                            (OpCode.BinaryBranch) opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseLabel(args.get(2)));
 
+                case UNARY_BRANCH:
+                    checkArity(args, 2, line);
+                    return new Instruction.UnaryBranch(
+                            (OpCode.UnaryBranch) opcode,
+                            parseRegister(args.get(0)),
+                            parseLabel(args.get(1)));
+
                 case ARITHMETIC_WITH_IMMEDIATE:
                     checkArity(args, 3, line);
                     return new Instruction.ArithmeticWithImmediate(
-                            (OpCode.ArithmeticWithImmediate)opcode,
+                            (OpCode.ArithmeticWithImmediate) opcode,
                             parseRegister(args.get(0)),
                             parseRegister(args.get(1)),
                             parseImmediate(args.get(2)));
@@ -168,14 +186,9 @@ public final class AssemblyParser {
                             parseRegister(args.get(0)),
                             parseImmediate(args.get(1)));
 
-                case NULLARY_INTRINSIC:
-                    if (opcode == OpCode.PUSH_REGISTERS) {
-                        return Instruction.NullaryIntrinsic.pushRegisters;
-                    } else if (opcode == OpCode.POP_REGISTERS) {
-                        return Instruction.NullaryIntrinsic.popRegisters;
-                    } else {
-                        throw new Error("Cannot parse ill-understood intrinsic instruction " + line);
-                    }
+                case NULLARY:
+                    checkArity(args, 0, line);
+                    return Instruction.Nullary.create((OpCode.Nullary) opcode);
 
                 default:
                     throw new Error("Cannot parse ill-understood instruction " + line);
@@ -185,7 +198,8 @@ public final class AssemblyParser {
 
     private static void checkArity(List<String> args, int expectedArity, String line) {
         if (args.size() != expectedArity) {
-            throw new Error("Expected " + expectedArity + " arguments; got " + args.size() + ": " + line);
+            throw new Error(
+                    "The expected number of arguments was " + expectedArity + "; got " + args.size() + ": " + line);
         }
     }
 
@@ -197,9 +211,9 @@ public final class AssemblyParser {
         if (name.startsWith("$")) {
             // We found an architectural register.
             var candidate = Register.Arch.allRegisters
-                .stream()
-                .filter(r -> r.toString().equals(name))
-                .findFirst();
+                    .stream()
+                    .filter(r -> r.toString().equals(name))
+                    .findFirst();
             if (candidate.isEmpty()) {
                 throw new Error("Expected an architectural register name, got " + name);
             }
@@ -219,8 +233,8 @@ public final class AssemblyParser {
 
     private static boolean isLabel(String text) {
         return text.length() > 0
-            && Character.isJavaIdentifierStart(text.codePointAt(0))
-            && text.codePoints().allMatch(Character::isJavaIdentifierPart);
+                && Character.isJavaIdentifierStart(text.codePointAt(0))
+                && text.codePoints().allMatch(Character::isJavaIdentifierPart);
     }
 
     private static int parseImmediate(String text) {

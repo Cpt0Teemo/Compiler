@@ -70,12 +70,12 @@ public abstract class Instruction extends AssemblyItem {
             return List.of(src1, src2);
         }
 
-        public TernaryArithmetic rebuild(Map<Register,Register> regMap) {
+        public TernaryArithmetic rebuild(Map<Register, Register> regMap) {
             return new TernaryArithmetic(
-                (OpCode.TernaryArithmetic)opcode,
-                regMap.getOrDefault(dst, dst),
-                regMap.getOrDefault(src1, src1),
-                regMap.getOrDefault(src2, src2));
+                    (OpCode.TernaryArithmetic) opcode,
+                    regMap.getOrDefault(dst, dst),
+                    regMap.getOrDefault(src1, src1),
+                    regMap.getOrDefault(src2, src2));
         }
 
         @Override
@@ -117,9 +117,9 @@ public abstract class Instruction extends AssemblyItem {
             return List.of(src1, src2);
         }
 
-        public BinaryArithmetic rebuild(Map<Register,Register> regMap) {
+        public BinaryArithmetic rebuild(Map<Register, Register> regMap) {
             return new BinaryArithmetic(
-                    (OpCode.BinaryArithmetic)opcode,
+                    (OpCode.BinaryArithmetic) opcode,
                     regMap.getOrDefault(src1, src1),
                     regMap.getOrDefault(src2, src2));
         }
@@ -161,9 +161,9 @@ public abstract class Instruction extends AssemblyItem {
             return List.of();
         }
 
-        public UnaryArithmetic rebuild(Map<Register,Register> regMap) {
+        public UnaryArithmetic rebuild(Map<Register, Register> regMap) {
             return new UnaryArithmetic(
-                    (OpCode.UnaryArithmetic)opcode,
+                    (OpCode.UnaryArithmetic) opcode,
                     regMap.getOrDefault(dst, dst));
         }
 
@@ -182,14 +182,24 @@ public abstract class Instruction extends AssemblyItem {
     }
 
     /**
-     * A branch instruction, that is, a type I instruction that takes a {@link Label} as immediate operand.
+     * An instruction that affects control flow.
      */
-    public static final class Branch extends Instruction {
+    public static abstract class ControlFlow extends Instruction {
+        public ControlFlow(OpCode opcode) {
+            super(opcode);
+        }
+    }
+
+    /**
+     * A binary branch instruction, that is, a type I instruction that takes two {@link Register} operands and one
+     * {@link Label} as immediate operand.
+     */
+    public static final class BinaryBranch extends ControlFlow {
         public final Label label;
         public final Register src1;
         public final Register src2;
 
-        public Branch(OpCode.Branch opcode, Register src1, Register src2, Label label) {
+        public BinaryBranch(OpCode.BinaryBranch opcode, Register src1, Register src2, Label label) {
             super(opcode);
             this.label = label;
             this.src1 = src1;
@@ -200,34 +210,79 @@ public abstract class Instruction extends AssemblyItem {
             return opcode + " " + src1 + "," + src2 + "," + label;
         }
 
-
         public Register def() {
             return null;
         }
-
 
         public List<Register> uses() {
             return List.of(src1, src2);
         }
 
-        public Branch rebuild(Map<Register,Register> regMap) {
-            return new Branch(
-                (OpCode.Branch)opcode,
-                regMap.getOrDefault(src1,src1),
-                regMap.getOrDefault(src2,src2), label);
+        public BinaryBranch rebuild(Map<Register, Register> regMap) {
+            return new BinaryBranch(
+                    (OpCode.BinaryBranch) opcode,
+                    regMap.getOrDefault(src1, src1),
+                    regMap.getOrDefault(src2, src2), label);
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            Branch branch = (Branch) o;
+            BinaryBranch branch = (BinaryBranch) o;
             return label.equals(branch.label) && src1.equals(branch.src1) && src2.equals(branch.src2);
         }
 
         @Override
         public int hashCode() {
             return Objects.hash(label, src1, src2);
+        }
+    }
+
+    /**
+     * A unary branch instruction, that is, an instruction that takes one {@link Register} operand and one
+     * {@link Label} as immediate operand.
+     */
+    public static final class UnaryBranch extends ControlFlow {
+        public final Label label;
+        public final Register src;
+
+        public UnaryBranch(OpCode.UnaryBranch opcode, Register src, Label label) {
+            super(opcode);
+            this.label = label;
+            this.src = src;
+        }
+
+        public String toString() {
+            return opcode + " " + src + "," + label;
+        }
+
+        public Register def() {
+            return null;
+        }
+
+        public List<Register> uses() {
+            return List.of(src);
+        }
+
+        public UnaryBranch rebuild(Map<Register, Register> regMap) {
+            return new UnaryBranch(
+                    (OpCode.UnaryBranch) opcode,
+                    regMap.getOrDefault(src, src),
+                    label);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UnaryBranch branch = (UnaryBranch) o;
+            return label.equals(branch.label) && src.equals(branch.src);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(label, src);
         }
     }
 
@@ -259,12 +314,12 @@ public abstract class Instruction extends AssemblyItem {
             return Arrays.asList(uses);
         }
 
-        public ArithmeticWithImmediate rebuild(Map<Register,Register> regMap) {
+        public ArithmeticWithImmediate rebuild(Map<Register, Register> regMap) {
             return new ArithmeticWithImmediate(
-                (OpCode.ArithmeticWithImmediate)opcode,
-                regMap.getOrDefault(dst, dst),
-                regMap.getOrDefault(src, src),
-                imm);
+                    (OpCode.ArithmeticWithImmediate) opcode,
+                    regMap.getOrDefault(dst, dst),
+                    regMap.getOrDefault(src, src),
+                    imm);
         }
 
         @Override
@@ -282,18 +337,20 @@ public abstract class Instruction extends AssemblyItem {
     }
 
     /**
-     * A J-type instruction, which consists of an opcode and an address operand, encoded as a {@link Label}.
+     * A jump instruction, an unconditional branch that consists of an opcode and an address operand, encoded as a
+     * {@link Label}.
      */
-    public static final class Jump extends Instruction {
+    public static final class Jump extends ControlFlow {
         /**
-         * The J-type instruction's address operand, encoded as a label.
+         * The jump instruction's address operand, encoded as a label.
          */
         public final Label label;
 
         /**
-         * Creates a new J-type instruction from an opcode and a label.
+         * Creates a new jump instruction from an opcode and a label.
+         *
          * @param opcode The opcode that defines the type of the instruction.
-         * @param label The label that serves as the address operand of the instruction.
+         * @param label  The label that serves as the address operand of the instruction.
          */
         public Jump(OpCode.Jump opcode, Label label) {
             super(opcode);
@@ -316,7 +373,9 @@ public abstract class Instruction extends AssemblyItem {
         }
 
         @Override
-        public String toString() { return opcode + " " + label; }
+        public String toString() {
+            return opcode + " " + label;
+        }
 
         @Override
         public boolean equals(Object o) {
@@ -333,6 +392,61 @@ public abstract class Instruction extends AssemblyItem {
     }
 
     /**
+     * A jump-register instruction, an unconditional branch that jumps to the address defined by a {@link Register}
+     * operand.
+     */
+    public static final class JumpRegister extends ControlFlow {
+        /**
+         * The jump-register instruction's address operand, encoded as the contents of a register.
+         */
+        public final Register address;
+
+        /**
+         * Creates a new jump-register instruction from an opcode and a register.
+         *
+         * @param opcode  The opcode that defines the type of the instruction.
+         * @param address The register that serves as the address operand of the instruction.
+         */
+        public JumpRegister(OpCode.JumpRegister opcode, Register address) {
+            super(opcode);
+            this.address = address;
+        }
+
+        @Override
+        public Register def() {
+            return null;
+        }
+
+        @Override
+        public List<Register> uses() {
+            return List.of(address);
+        }
+
+        @Override
+        public Instruction rebuild(Map<Register, Register> regMap) {
+            return new JumpRegister((OpCode.JumpRegister) opcode, regMap.getOrDefault(address, address));
+        }
+
+        @Override
+        public String toString() {
+            return opcode + " " + address;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            JumpRegister jump = (JumpRegister) o;
+            return opcode == jump.opcode && address.equals(jump.address);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(opcode, address);
+        }
+    }
+
+    /**
      * An instruction that loads or stores an address in memory. The address is computed based on a register and an
      * immediate operand.
      */
@@ -340,6 +454,7 @@ public abstract class Instruction extends AssemblyItem {
         public final Register op1;
         public final Register op2;
         public final int imm;
+
         public MemIndirect(OpCode opcode, Register op1, Register op2, int imm) {
             super(opcode);
             this.op1 = op1;
@@ -372,9 +487,11 @@ public abstract class Instruction extends AssemblyItem {
         public Store(OpCode.Store opcode, Register op1, Register op2, int imm) {
             super(opcode, op1, op2, imm);
         }
-        public Store rebuild(Map<Register,Register> regMap) {
-            return new Store((OpCode.Store)opcode, regMap.getOrDefault(op1, op1),regMap.getOrDefault(op2, op2), imm);
+
+        public Store rebuild(Map<Register, Register> regMap) {
+            return new Store((OpCode.Store) opcode, regMap.getOrDefault(op1, op1), regMap.getOrDefault(op2, op2), imm);
         }
+
         public Register def() {
             return null;
         }
@@ -392,9 +509,11 @@ public abstract class Instruction extends AssemblyItem {
         public Load(OpCode.Load opcode, Register op1, Register op2, int imm) {
             super(opcode, op1, op2, imm);
         }
+
         public Load rebuild(Map<Register, Register> regMap) {
-            return new Load((OpCode.Load)opcode, regMap.getOrDefault(op1, op1),regMap.getOrDefault(op2, op2), imm);
+            return new Load((OpCode.Load) opcode, regMap.getOrDefault(op1, op1), regMap.getOrDefault(op2, op2), imm);
         }
+
         public Register def() {
             return op1;
         }
@@ -477,8 +596,8 @@ public abstract class Instruction extends AssemblyItem {
             return List.of();
         }
 
-        public LoadAddress rebuild(Map<Register,Register> regMap) {
-            return new LoadAddress(regMap.getOrDefault(dst,dst),label);
+        public LoadAddress rebuild(Map<Register, Register> regMap) {
+            return new LoadAddress(regMap.getOrDefault(dst, dst), label);
         }
 
         @Override
@@ -496,23 +615,47 @@ public abstract class Instruction extends AssemblyItem {
     }
 
     /**
-     * A nullary compiler intrinsic. That is, a pseudo-instruction that takes no arguments and is understood only by
-     * the compiler.
+     * A nullary instruction, i.e., an instruction that takes no arguments. Use {@link #create(OpCode.Nullary)} to
+     * create nullary instructions, or use the pre-generated instructions in static fields {@link #nop},
+     * {@link #pushRegisters}, and {@link #popRegisters}.
      */
-    public static final class NullaryIntrinsic extends Instruction {
-        private NullaryIntrinsic(OpCode.NullaryIntrinsic opcode) {
+    public static final class Nullary extends Instruction {
+        private Nullary(OpCode.Nullary opcode) {
             super(opcode);
         }
 
         /**
+         * An instruction that performs no action.
+         */
+        public static final Nullary nop = new Nullary(OpCode.NOP);
+
+        /**
          * An intrinsic instruction that pushes onto the stack all registers currently in use by the compiler.
          */
-        public static final NullaryIntrinsic pushRegisters = new NullaryIntrinsic(OpCode.PUSH_REGISTERS);
+        public static final Nullary pushRegisters = new Nullary(OpCode.PUSH_REGISTERS);
 
         /**
          * An intrinsic instruction that pops from the stack all registers currently in use by the compiler.
          */
-        public static final NullaryIntrinsic popRegisters = new NullaryIntrinsic(OpCode.POP_REGISTERS);
+        public static final Nullary popRegisters = new Nullary(OpCode.POP_REGISTERS);
+
+        /**
+         * Creates a nullary instruction from an opcode.
+         *
+         * @param opcode The opcode to instantiate.
+         * @return A nullary instruction for {@code opcode}.
+         */
+        public static Nullary create(OpCode.Nullary opcode) {
+            if (opcode == OpCode.NOP) {
+                return nop;
+            } else if (opcode == OpCode.PUSH_REGISTERS) {
+                return pushRegisters;
+            } else if (opcode == OpCode.POP_REGISTERS) {
+                return popRegisters;
+            } else {
+                throw new Error("Cannot instantiate ill-understood opcode " + opcode);
+            }
+        }
 
         @Override
         public Register def() {

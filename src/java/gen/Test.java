@@ -60,16 +60,27 @@ public class Test {
                 15));
         assertEqual(
             AssemblyParser.parseAssemblyItem("beq $t0, v0, branch_target"),
-            new Instruction.Branch(
+            new Instruction.BinaryBranch(
                 OpCode.BEQ,
                 Register.Arch.t0,
                 Register.Virtual.get("v0"),
+                Label.get("branch_target")));
+        assertEqual(
+            AssemblyParser.parseAssemblyItem("bgtz $t0, branch_target"),
+            new Instruction.UnaryBranch(
+                OpCode.BGTZ,
+                Register.Arch.t0,
                 Label.get("branch_target")));
         assertEqual(
             AssemblyParser.parseAssemblyItem("jal jump_target"),
             new Instruction.Jump(
                 OpCode.JAL,
                 Label.get("jump_target")));
+        assertEqual(
+            AssemblyParser.parseAssemblyItem("jr $s0"),
+            new Instruction.JumpRegister(
+                OpCode.JR,
+                Register.Arch.s0));
         assertEqual(
             AssemblyParser.parseAssemblyItem("la $s0, address"),
             new Instruction.LoadAddress(
@@ -108,10 +119,10 @@ public class Test {
                 Register.Arch.t0));
         assertEqual(
             AssemblyParser.parseAssemblyItem("pushRegisters"),
-            Instruction.NullaryIntrinsic.pushRegisters);
+            Instruction.Nullary.pushRegisters);
         assertEqual(
             AssemblyParser.parseAssemblyItem("popRegisters"),
-            Instruction.NullaryIntrinsic.popRegisters);
+            Instruction.Nullary.popRegisters);
     }
 
     private static void assertEqual(AssemblyItem first, AssemblyItem second) {

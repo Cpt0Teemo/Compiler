@@ -30,32 +30,42 @@ public abstract class OpCode {
         UNARY_ARITHMETIC,
 
         /**
-         * A type J opcode.
+         * An unconditional branch opcode.
          */
         JUMP,
 
         /**
-         * A type I branch opcode.
+         * An unconditional branch opcode that jumps to a register.
          */
-        BRANCH,
+        JUMP_REGISTER,
 
         /**
-         * A type I arithmetic opcode.
+         * A branch opcode that takes two register operands and a label.
+         */
+        BINARY_BRANCH,
+
+        /**
+         * A branch opcode that takes on register operand and a label.
+         */
+        UNARY_BRANCH,
+
+        /**
+         * A binary arithmetic opcode that takes a destination register, a source register, and an immediate operand.
          */
         ARITHMETIC_WITH_IMMEDIATE,
 
         /**
-         * A type I load opcode.
+         * A load opcode.
          */
         LOAD,
 
         /**
-         * A type I store opcode.
+         * A store opcode.
          */
         STORE,
 
         /**
-         * The special load upper immediate opcode. This is a type I opcode that discards its source register.
+         * A load immediate opcode. This is an opcode that discards its source register.
          */
         LOAD_IMMEDIATE,
 
@@ -65,9 +75,9 @@ public abstract class OpCode {
         LOAD_ADDRESS,
 
         /**
-         * A pseudo-opcode whose meaning is known only to the compiler.
+         * An opcode that takes no operands.
          */
-        NULLARY_INTRINSIC
+        NULLARY
     }
 
     /**
@@ -110,8 +120,10 @@ public abstract class OpCode {
     public static final TernaryArithmetic ADD = new TernaryArithmetic("add");
     public static final TernaryArithmetic ADDU = new TernaryArithmetic("addu");
     public static final TernaryArithmetic AND = new TernaryArithmetic("and");
-    public static final TernaryArithmetic JR = new TernaryArithmetic("jr");
     public static final TernaryArithmetic NOR = new TernaryArithmetic("nor");
+    public static final TernaryArithmetic MOVN = new TernaryArithmetic("movn");
+    public static final TernaryArithmetic MOVZ = new TernaryArithmetic("movz");
+    public static final TernaryArithmetic MUL = new TernaryArithmetic("mul");
     public static final TernaryArithmetic SLT = new TernaryArithmetic("slt");
     public static final TernaryArithmetic SLTU = new TernaryArithmetic("sltu");
     public static final TernaryArithmetic SLLV = new TernaryArithmetic("sllv");
@@ -119,15 +131,20 @@ public abstract class OpCode {
     public static final TernaryArithmetic SRAV = new TernaryArithmetic("srav");
     public static final TernaryArithmetic SUB = new TernaryArithmetic("sub");
     public static final TernaryArithmetic SUBU = new TernaryArithmetic("subu");
+    public static final TernaryArithmetic XOR = new TernaryArithmetic("xor");
 
     /**
      * A list of all known ternary type R arithmetic opcodes.
      */
     public static final List<TernaryArithmetic> ternaryArithmeticOps =
-        List.of(ADD, ADDU, AND, JR, NOR, SLT, SLTU, SLLV, SRLV, SRAV, SUB, SUBU);
+        List.of(ADD, ADDU, AND, NOR, MUL, MOVN, MOVZ, SLT, SLTU, SLLV, SRLV, SRAV, SUB, SUBU, XOR);
 
     public static final BinaryArithmetic DIV = new BinaryArithmetic("div");
     public static final BinaryArithmetic DIVU = new BinaryArithmetic("divu");
+    public static final BinaryArithmetic MADD = new BinaryArithmetic("madd");
+    public static final BinaryArithmetic MADDU = new BinaryArithmetic("maddu");
+    public static final BinaryArithmetic MSUB = new BinaryArithmetic("msub");
+    public static final BinaryArithmetic MSUBU = new BinaryArithmetic("msubu");
     public static final BinaryArithmetic MULT = new BinaryArithmetic("mult");
     public static final BinaryArithmetic MULTU = new BinaryArithmetic("multu");
 
@@ -135,7 +152,7 @@ public abstract class OpCode {
      * A list of all known binary type R arithmetic opcodes.
      */
     public static final List<BinaryArithmetic> binaryArithmeticOps =
-        List.of(DIV, DIVU, MULT, MULTU);
+        List.of(DIV, DIVU, MADD, MADDU, MSUB, MSUBU, MULT, MULTU);
 
     public static final UnaryArithmetic MFHI = new UnaryArithmetic("mfhi");
     public static final UnaryArithmetic MFLO = new UnaryArithmetic("mflo");
@@ -150,58 +167,86 @@ public abstract class OpCode {
     public static final ArithmeticWithImmediate ADDIU = new ArithmeticWithImmediate("addiu");
     public static final ArithmeticWithImmediate ANDI = new ArithmeticWithImmediate("andi");
     public static final ArithmeticWithImmediate ORI = new ArithmeticWithImmediate("ori");
+    public static final ArithmeticWithImmediate SLL = new ArithmeticWithImmediate("sll");
+    public static final ArithmeticWithImmediate SRA = new ArithmeticWithImmediate("sra");
+    public static final ArithmeticWithImmediate SRL = new ArithmeticWithImmediate("srl");
     public static final ArithmeticWithImmediate SLTI = new ArithmeticWithImmediate("slti");
     public static final ArithmeticWithImmediate SLTIU = new ArithmeticWithImmediate("sltiu");
+    public static final ArithmeticWithImmediate XORI = new ArithmeticWithImmediate("xori");
 
     /**
      * A list of all known type I arithmetic opcodes.
      */
     public static final List<ArithmeticWithImmediate> arithmeticWithImmediateOps =
-        List.of(ADDI, ADDIU, ANDI, ORI, SLTI, SLTIU);
+        List.of(ADDI, ADDIU, ANDI, ORI, SLL, SRA, SRL, SLTI, SLTIU, XORI);
 
-    public static final Branch BEQ = new Branch("beq");
-    public static final Branch BNE = new Branch("bne");
+    public static final BinaryBranch BEQ = new BinaryBranch("beq");
+    public static final BinaryBranch BNE = new BinaryBranch("bne");
 
     /**
-     * A list of all known type I branch opcodes.
+     * A list of all binary control flow opcodes.
      */
-    public static final List<Branch> branchOps = List.of(BEQ, BNE);
+    public static final List<BinaryBranch> binaryBranchOps = List.of(BEQ, BNE);
 
+    public static final UnaryBranch BEQZ = new UnaryBranch("beqz");
+    public static final UnaryBranch BGEZ = new UnaryBranch("bgez");
+    public static final UnaryBranch BGEZAL = new UnaryBranch("bgezal");
+    public static final UnaryBranch BGTZ = new UnaryBranch("bgtz");
+    public static final UnaryBranch BLEZ = new UnaryBranch("blez");
+    public static final UnaryBranch BLTZ = new UnaryBranch("bltz");
+    public static final UnaryBranch BLTZAL = new UnaryBranch("bltzal");
+    public static final UnaryBranch BNEZ = new UnaryBranch("bnez");
+
+    /**
+     * A list of all unary control flow opcodes.
+     */
+    public static final List<UnaryBranch> unaryBranchOps =
+        List.of(BEQZ, BGEZ, BGEZAL, BGTZ, BLEZ, BLTZ, BLTZAL, BNEZ);
+
+    public static final Jump B = new Jump("b");
+    public static final Jump BAL = new Jump("bal");
     public static final Jump J = new Jump("j");
     public static final Jump JAL = new Jump("jal");
 
     /**
-     * A list of all known type J opcodes.
+     * A list of unconditional branch opcodes.
      */
-    public static final List<Jump> jumpOps = List.of(J, JAL);
+    public static final List<Jump> jumpOps = List.of(B, BAL, J, JAL);
 
-    public static final NullaryIntrinsic PUSH_REGISTERS = new NullaryIntrinsic("pushRegisters");
-    public static final NullaryIntrinsic POP_REGISTERS = new NullaryIntrinsic("popRegisters");
+    public static final JumpRegister JR = new JumpRegister("jr");
 
+    public static final Nullary NOP = new Nullary("nop");
+    public static final Nullary PUSH_REGISTERS = new Nullary("pushRegisters");
+    public static final Nullary POP_REGISTERS = new Nullary("popRegisters");
+
+    /**
+     * A list of all known nullary opcodes.
+     */
+    public static final List<Nullary> nullaryOps = List.of(NOP, PUSH_REGISTERS, POP_REGISTERS);
+
+    public static final Load LB = new Load("lb");
     public static final Load LBU = new Load("lbu");
+    public static final Load LH = new Load("lh");
     public static final Load LHU = new Load("lhu");
     public static final Load LW = new Load("lw");
     public static final Load LL = new Load("ll");
+    public static final Load ULW = new Load("ulw");
 
     /**
      * A list of all known type I load opcodes.
      */
-    public static final List<Load> loadOps = List.of(LBU, LHU, LW, LL);
+    public static final List<Load> loadOps = List.of(LB, LBU, LH, LHU, LW, LL, ULW);
 
     public static final Store SB = new Store("sb");
     public static final Store SH = new Store("sh");
     public static final Store SW = new Store("sw");
     public static final Store SC = new Store("sc");
+    public static final Store USW = new Store("usw");
 
     /**
      * A list of all known type I store opcodes.
      */
-    public static final List<Store> storeOps = List.of(SB, SH, SW, SC);
-
-    /**
-     * A list of all known intrinsic pseudo-opcodes.
-     */
-    public static final List<NullaryIntrinsic> nullaryIntrinsicOps = List.of(PUSH_REGISTERS, POP_REGISTERS);
+    public static final List<Store> storeOps = List.of(SB, SH, SW, SC, USW);
 
     public static final LoadImmediate LUI = new LoadImmediate("lui");
     public static final LoadImmediate LI = new LoadImmediate("li");
@@ -216,12 +261,13 @@ public abstract class OpCode {
                 binaryArithmeticOps.stream().map(x -> (OpCode) x),
                 unaryArithmeticOps.stream().map(x -> (OpCode) x),
                 arithmeticWithImmediateOps.stream().map(x -> (OpCode) x),
-                branchOps.stream().map(x -> (OpCode) x),
+                binaryBranchOps.stream().map(x -> (OpCode) x),
+                unaryBranchOps.stream().map(x -> (OpCode) x),
                 jumpOps.stream().map(x -> (OpCode) x),
                 loadOps.stream().map(x -> (OpCode) x),
                 storeOps.stream().map(x -> (OpCode) x),
-                nullaryIntrinsicOps.stream().map(x -> (OpCode) x),
-                Stream.of(LUI, LI, LA)
+                nullaryOps.stream().map(x -> (OpCode) x),
+                Stream.of(LUI, LI, LA, JR)
         ).flatMap(s -> s).toList();
     }
 
@@ -284,19 +330,19 @@ public abstract class OpCode {
     /**
      * A pseudo-opcode for intrinsics.
      */
-    public static final class NullaryIntrinsic extends OpCode {
-        private NullaryIntrinsic(String mnemonic) {
+    public static final class Nullary extends OpCode {
+        private Nullary(String mnemonic) {
             super(mnemonic);
         }
 
         @Override
         public Kind kind() {
-            return Kind.NULLARY_INTRINSIC;
+            return Kind.NULLARY;
         }
     }
 
     /**
-     * An opcode for type J instructions.
+     * An opcode for unconditional branch instructions.
      */
     public static final class Jump extends OpCode {
         private Jump(String mnemonic) {
@@ -310,16 +356,44 @@ public abstract class OpCode {
     }
 
     /**
-     * An opcode for branch instructions.
+     * An opcode for the jump-register instruction.
      */
-    public static final class Branch extends OpCode {
-        private Branch(String mnemonic) {
+    public static final class JumpRegister extends OpCode {
+        private JumpRegister(String mnemonic) {
             super(mnemonic);
         }
 
         @Override
         public Kind kind() {
-            return Kind.BRANCH;
+            return Kind.JUMP_REGISTER;
+        }
+    }
+
+    /**
+     * An opcode for branch instructions that take two register operands and a label.
+     */
+    public static final class BinaryBranch extends OpCode {
+        private BinaryBranch(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.BINARY_BRANCH;
+        }
+    }
+
+    /**
+     * An opcode for branch instructions that take one register operand and a label.
+     */
+    public static final class UnaryBranch extends OpCode {
+        private UnaryBranch(String mnemonic) {
+            super(mnemonic);
+        }
+
+        @Override
+        public Kind kind() {
+            return Kind.UNARY_BRANCH;
         }
     }
 
