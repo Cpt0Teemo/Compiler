@@ -170,8 +170,13 @@ public class Parser {
 
     private List<VarDecl> parseVarDecls(boolean atLeastOne, List<VarDecl> varDecls) {
         int horizon = 2;
-        if(token.tokenClass == TokenClass.STRUCT)
+        if(lookAhead(1).tokenClass == TokenClass.ASTERIX)
             horizon = 3;
+        else if(token.tokenClass == TokenClass.STRUCT) {
+            horizon = 3;
+            if(lookAhead(2).tokenClass == TokenClass.ASTERIX)
+                horizon = 4;
+        }
 
         if (accept(typesArray) && lookAhead(horizon).tokenClass != TokenClass.LPAR) {
             Type type = parseType();
@@ -203,7 +208,16 @@ public class Parser {
     }
 
     private List<FunDecl> parseFunDecls(List<FunDecl> funDecls) {
-        if (lookAhead(2).tokenClass == TokenClass.LPAR) {
+        int horizon = 2;
+        if(lookAhead(1).tokenClass == TokenClass.ASTERIX)
+            horizon = 3;
+        else if(token.tokenClass == TokenClass.STRUCT) {
+            horizon = 3;
+            if(lookAhead(2).tokenClass == TokenClass.ASTERIX)
+                horizon = 4;
+        }
+
+        if (lookAhead(horizon).tokenClass == TokenClass.LPAR) {
             Type type = parseType();
             String name = token.data;
             expect(TokenClass.IDENTIFIER);
