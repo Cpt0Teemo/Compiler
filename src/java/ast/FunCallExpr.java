@@ -4,6 +4,7 @@ import java.util.List;
 
 public class FunCallExpr extends Expr{
 
+    public FunDecl funDecl;
     public final String fnName;
     public final List<Expr> params;
 

@@ -1,10 +1,10 @@
 package sem;
 
-public abstract class Symbol {
-	public String name;
-	
-	
-	public Symbol(String name) {
-		this.name = name;
-	}
+abstract public class Symbol {
+
+    String name;
+    boolean isVar = false;
+    boolean isFun = false;
+    boolean isStruct = false;
+
 }
