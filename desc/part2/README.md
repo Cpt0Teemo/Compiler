@@ -68,16 +68,18 @@ We are now ready to bring in the new skeleton code from the **instructor** (cdub
 
 Type:
 ```
-$ git pull git@gitlab.cs.mcgill.ca:cdubach/comp520-coursework-w2021.git
+$ git pull git@gitlab.cs.mcgill.ca:cdubach/comp520-coursework-w20XX.git
 ```
+where XX is this year (e.g. 22 for 2022).
 This will cause some merge conflict(s) due to the change of the return type of some of the parse functions to return an AST node instead of void.
 For instance:
 ```
-From gitlab.cs.mcgill.ca:cdubach/comp520-coursework-w2021
+From gitlab.cs.mcgill.ca:cdubach/comp520-coursework-w20XX
  * branch            HEAD       -> FETCH_HEAD
 Auto-merging src/parser/Parser.java
 CONFLICT (content): Merge conflict in src/parser/Parser.java
 ```
+where XX is this year (e.g. 22 for 2022).
 Here, the file Parser.java is causing a merge conflict.
 In order to resolve it, you should open the file to fix the conflict.
 For the parser, you'd possibly want to remove everything between the equals symbols and the greater than symbols, e.g.
