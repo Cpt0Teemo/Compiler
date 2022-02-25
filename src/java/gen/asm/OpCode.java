@@ -11,6 +11,7 @@ package gen.asm;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -277,7 +278,7 @@ public abstract class OpCode {
                 storeOps.stream().map(x -> (OpCode) x),
                 nullaryOps.stream().map(x -> (OpCode) x),
                 Stream.of(LUI, LI, LA, JR)
-        ).flatMap(s -> s).toList();
+        ).flatMap(s -> s).collect(Collectors.toList());
     }
 
     /**

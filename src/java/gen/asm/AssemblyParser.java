@@ -12,6 +12,7 @@ package gen.asm;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Parses {@link AssemblyProgram} instances from textual assembly files. Supports the same subset of MIPS assembly that
@@ -30,7 +31,7 @@ public final class AssemblyParser {
 
         var program = new AssemblyProgram();
         AssemblyProgram.Section currentSection = null;
-        for (var line : reader.lines().toList()) {
+        for (var line : reader.lines().collect(Collectors.toList())) {
             var item = parseAssemblyItem(line);
             if (item == null) {
                 continue;
@@ -96,7 +97,7 @@ public final class AssemblyParser {
             }
 
             // Split and parse the arguments.
-            var args = Arrays.stream(opcodeAndArgs[1].split(",")).map(String::trim).toList();
+            var args = Arrays.stream(opcodeAndArgs[1].split(",")).map(String::trim).collect(Collectors.toList());
             if (args.size() == 1 && args.get(0).isBlank()) {
                 args = List.of();
             }
