@@ -130,10 +130,11 @@ public abstract class OpCode {
     public static final TernaryArithmetic ADD = new TernaryArithmetic("add");
     public static final TernaryArithmetic ADDU = new TernaryArithmetic("addu");
     public static final TernaryArithmetic AND = new TernaryArithmetic("and");
-    public static final TernaryArithmetic NOR = new TernaryArithmetic("nor");
     public static final TernaryArithmetic MOVN = new TernaryArithmetic("movn");
     public static final TernaryArithmetic MOVZ = new TernaryArithmetic("movz");
     public static final TernaryArithmetic MUL = new TernaryArithmetic("mul");
+    public static final TernaryArithmetic NOR = new TernaryArithmetic("nor");
+    public static final TernaryArithmetic OR = new TernaryArithmetic("or");
     public static final TernaryArithmetic SLT = new TernaryArithmetic("slt");
     public static final TernaryArithmetic SLTU = new TernaryArithmetic("sltu");
     public static final TernaryArithmetic SLLV = new TernaryArithmetic("sllv");
@@ -147,7 +148,7 @@ public abstract class OpCode {
      * A list of all known ternary type R arithmetic opcodes.
      */
     public static final List<TernaryArithmetic> ternaryArithmeticOps =
-        List.of(ADD, ADDU, AND, NOR, MUL, MOVN, MOVZ, SLT, SLTU, SLLV, SRLV, SRAV, SUB, SUBU, XOR);
+        List.of(ADD, ADDU, AND, NOR, OR, MUL, MOVN, MOVZ, SLT, SLTU, SLLV, SRLV, SRAV, SUB, SUBU, XOR);
 
     public static final BinaryArithmetic DIV = new BinaryArithmetic("div");
     public static final BinaryArithmetic DIVU = new BinaryArithmetic("divu");
