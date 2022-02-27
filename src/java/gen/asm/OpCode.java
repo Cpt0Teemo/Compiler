@@ -229,11 +229,12 @@ public abstract class OpCode {
     public static final Nullary NOP = new Nullary("nop");
     public static final Nullary PUSH_REGISTERS = new Nullary("pushRegisters");
     public static final Nullary POP_REGISTERS = new Nullary("popRegisters");
+    public static final Nullary SYSCALL = new Nullary("syscall");
 
     /**
      * A list of all known nullary opcodes.
      */
-    public static final List<Nullary> nullaryOps = List.of(NOP, PUSH_REGISTERS, POP_REGISTERS);
+    public static final List<Nullary> nullaryOps = List.of(NOP, PUSH_REGISTERS, POP_REGISTERS, SYSCALL);
 
     public static final Load LB = new Load("lb");
     public static final Load LBU = new Load("lbu");

@@ -649,6 +649,11 @@ public abstract class Instruction extends AssemblyItem {
         public static final Nullary popRegisters = new Nullary(OpCode.POP_REGISTERS);
 
         /**
+         * An instruction that performs a system call.
+         */
+        public static final Nullary syscall = new Nullary(OpCode.SYSCALL);
+
+        /**
          * Creates a nullary instruction from an opcode.
          *
          * @param opcode The opcode to instantiate.
@@ -661,6 +666,8 @@ public abstract class Instruction extends AssemblyItem {
                 return pushRegisters;
             } else if (opcode == OpCode.POP_REGISTERS) {
                 return popRegisters;
+            } else if (opcode == OpCode.SYSCALL) {
+                return syscall;
             } else {
                 throw new Error("Cannot instantiate ill-understood opcode " + opcode);
             }
