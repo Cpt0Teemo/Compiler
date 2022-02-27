@@ -558,7 +558,7 @@ public abstract class Instruction extends AssemblyItem {
 
         @Override
         public Instruction rebuild(Map<Register, Register> regMap) {
-            return this;
+            return new LoadImmediate((OpCode.LoadImmediate)opcode, regMap.getOrDefault(dst, dst), imm);
         }
 
         @Override
