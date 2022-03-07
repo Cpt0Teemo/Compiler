@@ -10,6 +10,7 @@
 package gen.asm;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -125,6 +126,15 @@ public class AssemblyProgram {
                         }
                     })
             );
+        }
+
+        @Override
+        public String toString()
+        {
+            var sw = new StringWriter();
+            var pw = new PrintWriter(sw);
+            print(pw);
+            return sw.toString();
         }
 
         @Override
