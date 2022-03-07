@@ -194,7 +194,7 @@ public class Parser {
                 expect(TokenClass.INT_LITERAL);
                 expect(TokenClass.RSBR);
                 expect(TokenClass.SC);
-                type = ArrayType.fromType(type, size);
+                type = new ArrayType(type, size);
                 varDecls.add(new VarDecl(type, identifier));
                 parseVarDecls(false, varDecls);
             }
