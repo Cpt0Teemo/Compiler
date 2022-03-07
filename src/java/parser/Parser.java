@@ -355,101 +355,101 @@ public class Parser {
     private Expr parseExpr1() {
         Expr lExpr = parseExpr2();
 
-        if(accept(TokenClass.LOGOR)) {
+        while(accept(TokenClass.LOGOR)) {
             nextToken();
-            Expr rExpr = parseExpr1();
-            return new Or(lExpr, rExpr);
-        } else {
-            return lExpr;
+            Expr rExpr = parseExpr2();
+            lExpr = new Or(lExpr, rExpr);
         }
+        return lExpr;
     }
 
     private Expr parseExpr2() {
         Expr lExpr = parseExpr3();
 
-        if(accept(TokenClass.LOGAND)) {
+        while(accept(TokenClass.LOGAND)) {
             nextToken();
-            Expr rExpr = parseExpr2();
-            return new And(lExpr, rExpr);
-        } else {
-            return lExpr;
+            Expr rExpr = parseExpr3();
+            lExpr = new And(lExpr, rExpr);
         }
+        return lExpr;
     }
 
     private Expr parseExpr3() {
         Expr lExpr = parseExpr4();
 
+        while(accept(TokenClass.EQ, TokenClass.NE))
         if(accept(TokenClass.EQ)) {
             nextToken();
-            Expr rExpr = parseExpr3();
-            return new Eq(lExpr, rExpr);
-        } else if(accept(TokenClass.NE)) {
+            Expr rExpr = parseExpr4();
+            lExpr = new Eq(lExpr, rExpr);
+        } else { //NE
             nextToken();
-            Expr rExpr = parseExpr3();
-            return new Ne(lExpr, rExpr);
-        } else {
-            return lExpr;
+            Expr rExpr = parseExpr4();
+            lExpr = new Ne(lExpr, rExpr);
         }
+        return lExpr;
     }
 
     private Expr parseExpr4() {
         Expr lExpr = parseExpr5();
 
-        if(accept(TokenClass.LT)) {
-            nextToken();
-            Expr rExpr = parseExpr4();
-            return new Lt(lExpr, rExpr);
-        } else if(accept(TokenClass.GT)) {
-            nextToken();
-            Expr rExpr = parseExpr4();
-            return new Gt(lExpr, rExpr);
-        } else if(accept(TokenClass.LE)) {
-            nextToken();
-            Expr rExpr = parseExpr4();
-            return new Le(lExpr, rExpr);
-        } else if(accept(TokenClass.GE)) {
-            nextToken();
-            Expr rExpr = parseExpr4();
-            return new Ge(lExpr, rExpr);
-        } else {
-            return lExpr;
+        while(accept(TokenClass.LT, TokenClass.GT, TokenClass.LE, TokenClass.GE)) {
+            if (accept(TokenClass.LT)) {
+                nextToken();
+                Expr rExpr = parseExpr5();
+                lExpr = new Lt(lExpr, rExpr);
+            } else if (accept(TokenClass.GT)) {
+                nextToken();
+                Expr rExpr = parseExpr5();
+                lExpr = new Gt(lExpr, rExpr);
+            } else if (accept(TokenClass.LE)) {
+                nextToken();
+                Expr rExpr = parseExpr5();
+                lExpr = new Le(lExpr, rExpr);
+            } else if (accept(TokenClass.GE)) {
+                nextToken();
+                Expr rExpr = parseExpr5();
+                lExpr = new Ge(lExpr, rExpr);
+            }
         }
+        return lExpr;
     }
 
     private Expr parseExpr5() {
         Expr lExpr = parseExpr6();
-
-        if(accept(TokenClass.PLUS)) {
-            nextToken();
-            Expr rExpr = parseExpr5();
-            return new Add(lExpr, rExpr);
-        } else if(accept(TokenClass.MINUS)) {
-            nextToken();
-            Expr rExpr = parseExpr5();
-            return new Sub(lExpr, rExpr);
-        } else {
-            return lExpr;
+        while(accept(TokenClass.PLUS, TokenClass.MINUS)) {
+            if (accept(TokenClass.PLUS)) {
+                nextToken();
+                Expr rExpr = parseExpr6();
+                lExpr = new Add(lExpr, rExpr);
+            } else { //MINUS
+                nextToken();
+                Expr rExpr = parseExpr6();
+                lExpr = new Sub(lExpr, rExpr);
+            }
         }
+        return lExpr;
     }
 
     private Expr parseExpr6() {
         Expr lExpr = parseExpr7();
 
-        if(accept(TokenClass.ASTERIX)) {
-            nextToken();
-            Expr rExpr = parseExpr6();
-            return new Mul(lExpr, rExpr);
-        } else if(accept(TokenClass.DIV)) {
-            nextToken();
-            Expr rExpr = parseExpr6();
-            return new Div(lExpr, rExpr);
-        } else if(accept(TokenClass.REM)) {
-            nextToken();
-            Expr rExpr = parseExpr6();
-            return new Mod(lExpr, rExpr);
-        } else {
-            return lExpr;
+        while(accept(TokenClass.ASTERIX, TokenClass.DIV, TokenClass.REM)) {
+            if (accept(TokenClass.ASTERIX)) {
+                nextToken();
+                Expr rExpr = parseExpr7();
+                lExpr = new Mul(lExpr, rExpr);
+            } else if (accept(TokenClass.DIV)) {
+                nextToken();
+                Expr rExpr = parseExpr7();
+                lExpr = new Div(lExpr, rExpr);
+            } else if (accept(TokenClass.REM)) {
+                nextToken();
+                Expr rExpr = parseExpr7();
+                lExpr = new Mod(lExpr, rExpr);
+            }
         }
+        return lExpr;
     }
 
     private Expr parseExpr7() {
@@ -481,19 +481,22 @@ public class Parser {
     }
 
     private Expr parseExpr8() {
-        Expr expr = parseTerminal();
+        Expr lExpr = parseTerminal();
 
-        if(expr instanceof VarExpr) {
-            if(accept(TokenClass.LSBR)) { //Array acess
+        if(!(lExpr instanceof VarExpr))
+            return lExpr;
+
+        while(accept(TokenClass.LSBR, TokenClass.DOT, TokenClass.LPAR)){
+            if(accept(TokenClass.LSBR)) { //Array access
                 nextToken();
                 Expr arrayIndex = parseExpr1();
                 expect(TokenClass.RSBR);
-                return new ArrayAccessExpr(expr, arrayIndex);
-            } else if(accept(TokenClass.DOT)) { //Field acess
+                lExpr = new ArrayAccessExpr(lExpr, arrayIndex);
+            } else if(accept(TokenClass.DOT)) { //Field access
                 nextToken();
                 String identifier = token.data;
                 expect(TokenClass.IDENTIFIER);
-                return new FieldAccessExpr(expr, identifier);
+                lExpr = new FieldAccessExpr(lExpr, identifier);
             } else if(accept(TokenClass.LPAR)) { //Function call
                 nextToken();
                 List<Expr> params = new ArrayList<>();
@@ -507,10 +510,10 @@ public class Parser {
                     }
                 }
                 expect(TokenClass.RPAR);
-                return new FunCallExpr(((VarExpr) expr).name, params);
+                lExpr = new FunCallExpr(((VarExpr) lExpr).name, params);
             }
         }
-        return expr;
+        return lExpr;
     }
 
     private Expr parseTerminal() {
