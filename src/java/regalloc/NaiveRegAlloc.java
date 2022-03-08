@@ -1,3 +1,5 @@
+// Authors: Christophe Dubach, Jonathan Van der Cruysse
+
 package regalloc;
 
 import gen.asm.Register;
@@ -9,7 +11,9 @@ import java.util.*;
  * A very naive register allocator which allocates each virtual registers in the data section with a label.
  * The allocator assumes that each function has a single corresponding text section.
  */
-public class NaiveRegAlloc {
+public final class NaiveRegAlloc implements AssemblyPass {
+
+    private NaiveRegAlloc() { }
 
     private static Map<Register.Virtual, Label>  collectVirtualRegisters(AssemblyProgram.Section section) {
         final Map<Register.Virtual, Label> vrMap = new HashMap<>();
@@ -76,7 +80,7 @@ public class NaiveRegAlloc {
         }
     }
 
-    public static AssemblyProgram run(AssemblyProgram prog) {
+    private static AssemblyProgram run(AssemblyProgram prog) {
 
         AssemblyProgram newProg = new AssemblyProgram();
 
@@ -153,4 +157,13 @@ public class NaiveRegAlloc {
         return newProg;
     }
 
+    /**
+     * The singleton instance of {@link NaiveRegAlloc}.
+     */
+    public static final NaiveRegAlloc INSTANCE = new NaiveRegAlloc();
+
+    @Override
+    public AssemblyProgram apply(AssemblyProgram program) {
+        return run(program);
+    }
 }

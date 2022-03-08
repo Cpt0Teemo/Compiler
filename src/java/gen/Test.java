@@ -26,7 +26,7 @@ public class Test {
             e.printStackTrace();
         }
 
-        AssemblyProgram newProg = NaiveRegAlloc.run(prog);
+        AssemblyProgram newProg = NaiveRegAlloc.INSTANCE.apply(prog);
 
         try {
             PrintWriter writer = new PrintWriter("t2.asm");
