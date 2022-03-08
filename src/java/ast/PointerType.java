@@ -12,4 +12,12 @@ public class PointerType implements Type {
     public <T> T accept(ASTVisitor<T> v) {
         return v.visitPointerType(this);
     }
+
+    @Override
+    public boolean isEqual(Type t) {
+        if(t instanceof PointerType)
+            return type.isEqual(((PointerType) t).type);
+        else
+            return false;
+    }
 }

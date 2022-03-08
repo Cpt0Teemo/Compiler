@@ -39,7 +39,7 @@ public class Scope {
         String name = s.name;
         if(s.isStruct)
             name = "struct." + name;
-        symbolTable.put(s.name, s);
+        symbolTable.put(name, s);
     }
 
 }

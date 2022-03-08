@@ -8,6 +8,7 @@ public class SemanticAnalyzer {
 		// List of visitors
 		ArrayList<SemanticVisitor> visitors = new ArrayList<SemanticVisitor>() {{
 			add(new NameAnalysisVisitor());
+			add(new TypeCheckVisitor());
 			// To be completed...
 		}};
 		// Error accumulator
@@ -17,6 +18,8 @@ public class SemanticAnalyzer {
 		for (SemanticVisitor v : visitors) {
 			prog.accept(v);
 			errors += v.getErrorCount();
+			if(errors > 0)
+				break;
 		}
 		
 		// Return the number of errors.

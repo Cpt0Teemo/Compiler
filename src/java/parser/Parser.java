@@ -483,9 +483,6 @@ public class Parser {
     private Expr parseExpr8() {
         Expr lExpr = parseTerminal();
 
-        if(!(lExpr instanceof VarExpr))
-            return lExpr;
-
         while(accept(TokenClass.LSBR, TokenClass.DOT, TokenClass.LPAR)){
             if(accept(TokenClass.LSBR)) { //Array access
                 nextToken();
@@ -498,6 +495,8 @@ public class Parser {
                 expect(TokenClass.IDENTIFIER);
                 lExpr = new FieldAccessExpr(lExpr, identifier);
             } else if(accept(TokenClass.LPAR)) { //Function call
+                if(!(lExpr instanceof VarExpr))
+                    return lExpr;
                 nextToken();
                 List<Expr> params = new ArrayList<>();
                 if(!accept(TokenClass.RPAR)) {

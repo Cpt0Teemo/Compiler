@@ -52,6 +52,12 @@ public class NameAnalysisVisitor extends BaseSemanticVisitor<Void> {
 
 	@Override
 	public Void visitStructType(StructType bt) {
+		Symbol s = this.scope.lookup(bt.name, true);
+		if(s == null || !s.isStruct) {
+			error("Struct type " + bt.name + " has never been declared");
+			return null;
+		}
+		bt.structTypeDecl = ((StructSymbol) s).structTypeDecl;
 		return null;
 	}
 
@@ -68,10 +74,11 @@ public class NameAnalysisVisitor extends BaseSemanticVisitor<Void> {
 	@Override
 	public Void visitStructTypeDecl(StructTypeDecl sts) {
 		Symbol s = this.scope.lookupCurrent("struct." + sts.structType.name, true);
-		if( s != null)
+		if( s != null) {
 			error("Struct " + sts.structType.name + " is already declared.");
-		else
-			this.scope.put(new StructSymbol(sts));
+			return null;
+		}
+		this.scope.put(new StructSymbol(sts));
 		Scope oldScope = this.scope;
 		this.scope = new Scope(oldScope);
 		for(VarDecl vd : sts.varDecls)
@@ -131,10 +138,11 @@ public class NameAnalysisVisitor extends BaseSemanticVisitor<Void> {
 	@Override
 	public Void visitFunDecl(FunDecl p) {
 		Symbol s = this.scope.lookupCurrent(p.name);
-		if( s != null)
+		if( s != null) {
 			error("Function " + p.name + " is already declared.");
-		else
-			this.scope.put(new FunSymbol(p));
+			return null;
+		}
+		this.scope.put(new FunSymbol(p));
 		Scope oldScope = this.scope;
 		this.scope = new Scope(oldScope);
 		for(VarDecl vd : p.params)
@@ -151,8 +159,10 @@ public class NameAnalysisVisitor extends BaseSemanticVisitor<Void> {
 			structTypeDecl.accept(this);
 		for(VarDecl vd : p.varDecls)
 			vd.accept(this);
-		for(FunDecl fd : p.funDecls)
+		for(FunDecl fd : p.funDecls) {
+			int i = p.funDecls.indexOf(fd);
 			fd.accept(this);
+		}
 		return null;
 	}
 
@@ -161,8 +171,10 @@ public class NameAnalysisVisitor extends BaseSemanticVisitor<Void> {
 		Symbol s = this.scope.lookupCurrent(vd.varName);
 		if( s != null)
 			error("Variable " + vd.varName + " is already declared.");
-		else
+		else {
 			this.scope.put(new VarSymbol(vd));
+			vd.type.accept(this);
+		}
 		return null;
 	}
 
@@ -197,10 +209,11 @@ public class NameAnalysisVisitor extends BaseSemanticVisitor<Void> {
 	@Override
 	public Void visitFunCallExpr(FunCallExpr fc) {
 		Symbol s = this.scope.lookup(fc.fnName);
-		if( s == null || !s.isFun)
+		if( s == null || !s.isFun) {
 			error("Function " + fc.fnName + " is never declared.");
-		else
-			fc.funDecl = ((FunSymbol) s).fd;
+			return null;
+		}
+		fc.funDecl = ((FunSymbol) s).fd;
 		for(Expr expr : fc.params)
 			expr.accept(this);
 		return null;

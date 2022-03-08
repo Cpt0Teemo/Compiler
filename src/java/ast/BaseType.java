@@ -17,4 +17,9 @@ public enum BaseType implements Type {
     public <T> T accept(ASTVisitor<T> v) {
         return v.visitBaseType(this);
     }
+
+    @Override
+    public boolean isEqual(Type t) {
+        return t == this;
+    }
 }
