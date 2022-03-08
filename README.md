@@ -8,7 +8,7 @@ We encourage you to regularly check this repository for changes.
 1. [Part 1 (parser)](desc/part1/): Friday, 4 February 2022 at 5pm, weight = 20%
 2. [Part 2 (ast builder + semantic analyser)](desc/part2/): Friday, 25 February 2022 at 5pm, weight = 20%
 3. [Part 3 (code generator)](desc/part3/): Friday, 18 March 2022, at 5pm, weight = 20%
-4. Part 4 (register allocator): Friday 8 April 2022, at 5pm, weight = 20%
+4. [Part 4 (register allocator)](desc/part4/): Friday 8 April 2022, at 5pm, weight = 20%
 5. Part 5 (advanced topic): Friday 29 April 2022, at 5pm, weight = 20%
 
 Specific instructions for each part can be found above by clicking on the part name.
