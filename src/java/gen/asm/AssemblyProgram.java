@@ -15,17 +15,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class AssemblyProgram {
+/**
+ * A MIPS assembly program.
+ */
+public final class AssemblyProgram {
 
-    public static class Section {
+    /**
+     * A section of an assembly program.
+     */
+    public static final class Section {
 
+        /**
+         * An enumeration of section types.
+         */
         public enum Type {TEXT, DATA}
+
+        /**
+         * The type of this section.
+         */
         public final Type type;
 
+        /**
+         * Creates a new section.
+         * @param type The type of section to create.
+         */
         public Section(Type type) {
             this.type = type;
         }
 
+        /**
+         * A list of the assembly items in this section.
+         */
         public final List<AssemblyItem> items = new ArrayList<>();
 
         public void emit(Instruction instruction) {
@@ -156,21 +176,44 @@ public class AssemblyProgram {
 
     public final List<Section> sections = new ArrayList<>();
 
+    /**
+     * Gets the current section. That is, the section that was last added to this {@link AssemblyProgram}.
+     * @return This program's current section.
+     */
+    public Section getCurrentSection() {
+        return currSection;
+    }
+
+    /**
+     * Appends a given section to this program. The section will become the current section, as produced by
+     * {@link #getCurrentSection()}.
+     * @param section The section to append to this program.
+     */
     public void emitSection(Section section) {
         currSection = section;
         sections.add(currSection);
     }
 
+    /**
+     * Creates a new section and appends it to this program. The new section will become the current section, as
+     * produced by {@link #getCurrentSection()}.
+     * @param type The type of section to create.
+     * @return The newly created section.
+     */
     public Section newSection(Section.Type type) {
-        currSection = new Section(type);
-        sections.add(currSection);
-        return currSection;
+        var section = new Section(type);
+        emitSection(section);
+        return getCurrentSection();
     }
 
+    /**
+     * Sends a textual representation of this assembly program to a {@link PrintWriter}.
+     * @param writer The writer to send a textual version of this program to.
+     */
     public void print(final PrintWriter writer) {
         sections.forEach(section -> {
-                section.print(writer);
-                writer.println();
+            section.print(writer);
+            writer.println();
         });
 
         writer.close();
