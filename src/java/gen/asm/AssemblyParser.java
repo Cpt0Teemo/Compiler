@@ -252,6 +252,17 @@ public final class AssemblyParser {
     }
 
     private static Map.Entry<Register, Integer> parseMemoryOperand(String text) {
+        if (text.startsWith("(")) {
+            // If a memory operand starts with a parenthesis, then it must be an offset-free operand. That is, it must
+            // have an offset of zero.
+            if (text.charAt(text.length() - 1) != ')') {
+                throw new Error("Expected a memory operand, got " + text);
+            }
+
+            var register = parseRegister(text.substring(1, text.length() - 1));
+            return new AbstractMap.SimpleEntry<>(register, 0);
+        }
+
         var pieces = text.split("\\(", 2);
         if (pieces.length != 2 || pieces[1].charAt(pieces[1].length() - 1) != ')') {
             throw new Error("Expected a memory operand, got " + text);

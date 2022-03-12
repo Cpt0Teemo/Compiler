@@ -100,6 +100,13 @@ public class Test {
                 Register.Arch.t1,
                 16));
         assertEqual(
+            AssemblyParser.parseAssemblyItem("lbu $t0, ($t1)"),
+            new Instruction.Load(
+                OpCode.LBU,
+                Register.Arch.t0,
+                Register.Arch.t1,
+                0));
+        assertEqual(
             AssemblyParser.parseAssemblyItem("sw $t0, 16($t1)"),
             new Instruction.Store(
                 OpCode.SW,
