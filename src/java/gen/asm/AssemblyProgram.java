@@ -1,72 +1,124 @@
+// Authors: Jonathan Van der Cruysse, Christophe Dubach
+
+// DO NOT MODIFY THIS FILE. For technical grading reasons, we may roll back this file to the original version we
+// provided. This will overwrite any and all local changes you made, likely breaking your compiler if you made
+// changes.
+//
+// Open a question on Ed if you need additional features that the classes in this file do not support, such as an
+// instruction/opcode that is essential but not currently exposed.
+
 package gen.asm;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class AssemblyProgram {
+/**
+ * A MIPS assembly program.
+ */
+public final class AssemblyProgram {
 
-    public static class Section {
+    /**
+     * A section of an assembly program.
+     */
+    public static final class Section {
 
+        /**
+         * An enumeration of section types.
+         */
         public enum Type {TEXT, DATA}
+
+        /**
+         * The type of this section.
+         */
         public final Type type;
 
+        /**
+         * Creates a new section.
+         * @param type The type of section to create.
+         */
         public Section(Type type) {
             this.type = type;
         }
 
-        public final List<AssemblyItem> items = new ArrayList<AssemblyItem>();
+        /**
+         * A list of the assembly items in this section.
+         */
+        public final List<AssemblyItem> items = new ArrayList<>();
 
-
-        public void emit(AssemblyItem.Instruction instruction) {
+        public void emit(Instruction instruction) {
             assert this.type == Type.TEXT;
             items.add(instruction);
         }
 
-        public void emit(String opcode, Register dst, Register src1, Register src2) {
-            assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.RInstruction(opcode, dst, src1, src2));
+        public void emit(OpCode.TernaryArithmetic opcode, Register dst, Register src1, Register src2) {
+            emit(new Instruction.TernaryArithmetic(opcode, dst, src1, src2));
         }
 
-        public void emit(String opcode, Register src1, Register src2, AssemblyItem.Label label) {
-            assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.Branch(opcode, src1, src2, label));
+        public void emit(OpCode.BinaryArithmetic opcode, Register src1, Register src2) {
+            emit(new Instruction.BinaryArithmetic(opcode, src1, src2));
         }
 
-        public void emit(String opcode, Register dst, Register src, int imm) {
-            assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.IInstruction(opcode, dst, src, imm));
+        public void emit(OpCode.UnaryArithmetic opcode, Register dst) {
+            emit(new Instruction.UnaryArithmetic(opcode, dst));
         }
 
-        public void emitLA(Register dst, AssemblyItem.Label label) {
-            assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.LA(dst, label));
+        public void emit(OpCode.BinaryBranch opcode, Register src1, Register src2, Label label) {
+            emit(new Instruction.BinaryBranch(opcode, src1, src2, label));
         }
 
-        public void emitLoad(String opcode, Register val, Register addr, int imm) {
-            assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.Load(opcode, val, addr, imm));
+        public void emit(OpCode.UnaryBranch opcode, Register src, Label label) {
+            emit(new Instruction.UnaryBranch(opcode, src, label));
         }
 
-        public void emitStore(String opcode, Register val, Register addr, int imm) {
-            assert this.type == Type.TEXT;
-            items.add(new AssemblyItem.Instruction.Store(opcode, val, addr, imm));
+        public void emit(OpCode.Jump opcode, Label label) {
+            emit(new Instruction.Jump(opcode, label));
+        }
+
+        public void emit(OpCode.JumpRegister opcode, Register address) {
+            emit(new Instruction.JumpRegister(opcode, address));
+        }
+
+        public void emit(OpCode.ArithmeticWithImmediate opcode, Register dst, Register src, int imm) {
+            emit(new Instruction.ArithmeticWithImmediate(opcode, dst, src, imm));
+        }
+
+        public void emit(OpCode.LoadAddress ignoredOpcode, Register dst, Label label) {
+            emit(new Instruction.LoadAddress(dst, label));
+        }
+
+        public void emit(OpCode.LoadImmediate opcode, Register dst, int immediate) {
+            emit(new Instruction.LoadImmediate(opcode, dst, immediate));
+        }
+
+        public void emit(OpCode.Load opcode, Register val, Register addr, int imm) {
+            emit(new Instruction.Load(opcode, val, addr, imm));
+        }
+
+        public void emit(OpCode.Store opcode, Register val, Register addr, int imm) {
+            emit(new Instruction.Store(opcode, val, addr, imm));
+        }
+
+        public void emit(OpCode.Nullary opcode) {
+            emit(Instruction.Nullary.create(opcode));
         }
 
 
-        public void emit(AssemblyItem.Label label){
+        public void emit(Label label){
             items.add(label);
         }
 
-        public void emit(AssemblyItem.Comment comment) {
+        public void emit(Comment comment) {
             items.add(comment);
         }
 
         public void emit(String comment) {
-            items.add(new AssemblyItem.Comment(comment));
+            items.add(new Comment(comment));
         }
 
-        public void emit(AssemblyItem.Directive directive) {
+        public void emit(Directive directive) {
             items.add(directive);
         }
 
@@ -78,53 +130,105 @@ public class AssemblyProgram {
             items.forEach(item ->
                     item.accept(new AssemblyItemVisitor() {
 
-                        public void visitComment(AssemblyItem.Comment comment) {
-                            writer.println("# "+comment);
+                        public void visitComment(Comment comment) {
+                            writer.println(comment);
                         }
-                        public void visitLabel(AssemblyItem.Label label) {
+                        public void visitLabel(Label label) {
                             writer.println(label + ":");
                         }
 
-                        public void visitDirective(AssemblyItem.Directive directive) {
+                        public void visitDirective(Directive directive) {
                             writer.println(directive);
                         }
 
-                        public void visitInstruction(AssemblyItem.Instruction instruction) {
+                        public void visitInstruction(Instruction instruction) {
                             writer.println(instruction);
                         }
                     })
             );
+        }
+
+        @Override
+        public String toString()
+        {
+            var sw = new StringWriter();
+            var pw = new PrintWriter(sw);
+            print(pw);
+            return sw.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Section section = (Section) o;
+            return type == section.type && items.equals(section.items);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, items);
         }
     }
 
 
     private Section currSection;
 
-    public final List<Section> sections = new ArrayList<Section>();
+    public final List<Section> sections = new ArrayList<>();
 
+    /**
+     * Gets the current section. That is, the section that was last added to this {@link AssemblyProgram}.
+     * @return This program's current section.
+     */
+    public Section getCurrentSection() {
+        return currSection;
+    }
+
+    /**
+     * Appends a given section to this program. The section will become the current section, as produced by
+     * {@link #getCurrentSection()}.
+     * @param section The section to append to this program.
+     */
     public void emitSection(Section section) {
         currSection = section;
         sections.add(currSection);
     }
 
+    /**
+     * Creates a new section and appends it to this program. The new section will become the current section, as
+     * produced by {@link #getCurrentSection()}.
+     * @param type The type of section to create.
+     * @return The newly created section.
+     */
     public Section newSection(Section.Type type) {
-        currSection = new Section(type);
-        sections.add(currSection);
-        return currSection;
+        var section = new Section(type);
+        emitSection(section);
+        return getCurrentSection();
     }
 
-
-
-
+    /**
+     * Sends a textual representation of this assembly program to a {@link PrintWriter}.
+     * @param writer The writer to send a textual version of this program to.
+     */
     public void print(final PrintWriter writer) {
-
         sections.forEach(section -> {
-                section.print(writer);
-                writer.println();
+            section.print(writer);
+            writer.println();
         });
-
 
         writer.close();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AssemblyProgram that = (AssemblyProgram) o;
+        return sections.equals(that.sections);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sections);
+    }
 }

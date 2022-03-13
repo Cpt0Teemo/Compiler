@@ -5,7 +5,7 @@ Please make sure to check any updates made to this page (use the "watch" feature
 
 The goal of part III is to write the code generator, targeting MIPS32 assembly.
 For this part, you will only be using virtual registers (except for special purpose registers such as `$sp, $fp, ...`).
-We provide you with a very native register allocator that assign each virtual register to a label and use memory to store the content of the registers as seen in the class.
+We provide you with a naive register allocator (`NaiveRegAlloc`) that assigns each virtual register to a label and uses memory to store the content of the registers as seen in class.
 
 
 
@@ -13,7 +13,7 @@ We provide you with a very native register allocator that assign each virtual re
 
 ## 0. Setup and Learning
 
-Your first task consist of setting up the MARS mips simulator.
+Your first task consist of setting up the MARS MIPS simulator.
 First download the simulator [here](./Mars4_5.jar) and follow Part 1 of the [tutorial](http://courses.missouristate.edu/KenVollmar/mars/tutorial.htm) to learn how to use the simulator.
 We also encourage you to have a look at the documentation provided by MARS which can be found [here](http://courses.missouristate.edu/KenVollmar/mars/Help/MarsHelpIntro.html) as well as the [MIPS 32 Instruction Set Quick Reference](./MD00565-2B-MIPS32-QRC-01.01-1.pdf).
 For a more detailed explanation about the MIPS architecture, please have a look at the [MIPS Assembly WikiBooks](http://en.wikibooks.org/wiki/MIPS_Assembly).
@@ -26,8 +26,8 @@ You should always make sure that all your tests execute correctly with the simul
 ## 1. Generating a simple program
 
 Your first real task should consist of producing an empty program (e.g. just an empty main function) and see that you can produce an assembly file.
-Next, we suggest that you implement the print_i function using the corresponding system calls (check the lecture notes and the link above to the MARS documentation that explain how to do this).
-To test it, you should implement support for integer litterals and have a hard-coded case in the function call node to handle a call to print_i.
+Next, we suggest that you implement the `print_i` function using the corresponding system calls (check the lecture notes and the link above to the MARS documentation that explain how to do this).
+To test it, you should implement support for integer literals and have a hard-coded case in the function call node to handle a call to `print_i`.
 
 Please note that we expect your programs to have one main function which should be the assembly entry point for the simulator. 
 To understand how instructions can be generated using the starting code we give you, take a look at the `Test` class in the `gen/` package.
@@ -35,7 +35,7 @@ To understand how instructions can be generated using the starting code we give 
 ## 2. Binary Operators
 
 Your next task should be to add support for all the binary operators, which is mostly done by implementing the `ExprGen` visitor. 
-When you need to request a new virtual register to store the results of an operation, simply instantiate one with `new Register.Virtual()`.
+When you need to request a new virtual register to store the results of an operation, simply instantiate one with `Register.Virtual.create()`.
 
 Please note that the `||` and `&&` operators should be implemented with control flow as seen in the lecture.
 Note that in the following example
@@ -45,7 +45,8 @@ if ((1==0) && foo() == 2)
     ...
 ```
 
-the function foo is never called at runtime since the semantic `&&` imposes that if the left side is false, the right side expression should not be executed. A similar logic applies for `||`. 
+the function foo is never called at runtime since the semantics of `&&` are that if the left side is false, the right side expression should not be executed.
+Similar logic applies for `||`. 
 
 
 
@@ -56,8 +57,8 @@ Your next task should be to implement allocations of global and local variables.
 As seen during the course, the global variables all go in the static storage area (data section of the assembly file).
 
 The local variables (variables inside a function) go onto the stack.
-You should allocate them at a fix offset from the frame pointer ($fp) and store this offset either in a symbol table that you carry around or directly in the VarDecl AST node as a field.
-Note that the only thing your compiler has to emit with respect to local variable is code to move the stack pointer ($sp) by an offset corresponding to the size of all the local variables declared on the stack.
+You should allocate them at a fix offset from the frame pointer (`$fp`) and store this offset either in a symbol table that you carry around or directly in the `VarDecl` AST node as a field.
+Note that the only thing your compiler has to emit with respect to local variable is code to move the stack pointer (`$sp`) by an offset corresponding to the size of all the local variables declared on the stack.
 
 Global variable allocation should be handled in the `ProgramGen` visitor while local variables should be handled in the `FunGen` visitor.
 
@@ -66,7 +67,7 @@ You can use the `lw` and `sw` instruction to read from or write to a variable re
 The tricky part will be to identify the location of the variables; either a label if globally allocated, or an offset from the frame pointer if locally allocated.
 We encourage you to store this allocation information in the `VarDecl` node when allocating variables.
 
-### sizeof and data alignment
+### `sizeof` and data alignment
 
 We will follow the following specification for the size of the different types:
 `sizeof(char)==1`, `sizeof(int)==4`, `sizeof(int*)==4`
@@ -90,7 +91,7 @@ As seen in the lecture, in the case of a `struct`, we highly encourage you to re
 We suggest that you then implement the loop and if-then-else control structures as seen during the course using the branch instructions.
 
 
-## 6. Function call
+## 6. Function calls
 
 You can them move on to implementing function calls, by far the most challenging part.
 
@@ -109,7 +110,7 @@ you should place the saved registers on the stack last since we do not know ahea
 Lastly, you should not forget to deal with function that returns `struct`.
 As explained in the lecture, the best strategy is to rewrite the AST before you reach code generation to remove the need to deal with this case.
 
-## 7. stdLib functions
+## 7. Standard library functions
 
 Finally, you should add support for all the standard library functions found in the file `minic-stdlib.h` provided in the tests folder.
 These should all be implemented using [system calls](http://courses.missouristate.edu/KenVollmar/mars/Help/SyscallHelp.html).
@@ -121,16 +122,28 @@ These should all be implemented using [system calls](http://courses.missouristat
 A new package has been added under `gen/`. This package should be used to store your code generator.
 
  * The `gen.CodeGenerator` is the only class which `Main.java` directly interfaces with.
- * The `gen.asm.*Gen` classes are the main four visitors that you will need to produce code.
+ * The `gen.*Gen` classes are the main four visitors that you will need to produce code.
  * The class `gen.Test` shows you an example on how to emit instructions.
 
-Another new package has been added under `gen/asm`. This package contains most of the assembly related constructs:
- * The `gen.asm.Register` class represents registers and contain a definition of most MIPS32 registers.
- * The `gen.AssemblyProgram` class represents an assembly programs which consists of several `Section`.
- * The `gen.asm.AssemblItem` class contains the items that appear in an assembly program: `Label`, `Instruction`, `Directive` and `Comment`.
- * the `gen.asm.AssemblyItemVisitor` class offers a visitor interface for `AssemblyItem`.
+Another new package has been added under `gen/asm`.
+This package defines the components of assembly programs as well as a visitor interface for examining assembly programs:
+ * `gen.asm.Register` represents registers and defines most MIPS32 registers in its `Arch` subclass.
+ * `gen.AssemblyProgram` represents assembly programs that consist of several `Section` instances.
+   `AssemblyProgram`'s `emit` methods provide a fluent, type-safe instruction generation API.
+ * `gen.asm.AssemblyParser` can parse textual assembly programs as `gen.AssemblyProgram` instances.
+   `AssemblyParser` restricts itself to the subset of assembly programs that the compiler can output.
+ * `gen.asm.AssemblyItem` has subclasses for the items that appear in an assembly program: `Label`, `Instruction`, `Directive` and `Comment`.
+ * `gen.asm.Instruction` has subclasses that represent families of instructions with similar behavior.
+ * `gen.asm.OpCode` enumerates MIPS opcodes.
+ * `gen.asm.AssemblyItemVisitor` offers a visitor interface for `AssemblyItem`.
+
+**Note:** Do not modify the files under `gen/asm`.
+For technical grading reasons, we may roll back these files to the original version we provided.
+This rollback will overwrite any and all local changes you made, likely breaking your compiler if you made changes.
+Open a question on Ed if you need additional features that the classes in `gen/asm` do not support, such as an
+instruction/opcode that is essential but not currently exposed.
  
- The new package `regalloc/` contains a very naive register allocator.
+ The new package `regalloc/` contains a naive register allocator: `NaiveRegAlloc`.
  
 
 

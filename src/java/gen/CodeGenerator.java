@@ -3,6 +3,7 @@ package gen;
 import ast.*;
 import gen.asm.AssemblyProgram;
 import regalloc.NaiveRegAlloc;
+import regalloc.RegAlloc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -19,13 +20,11 @@ public class CodeGenerator {
         progGen.visitProgram(astProgram);
 
         // run the register naive allocator which remove the virtual registers
-        AssemblyProgram asmProgNoVirtualRegs = NaiveRegAlloc.run(asmProgWithVirtualRegs);
+        AssemblyProgram asmProgNoVirtualRegs = RegAlloc.INSTANCE.apply(asmProgWithVirtualRegs);
 
         // print the assembly program
         PrintWriter writer = new PrintWriter(outputFile);
         asmProgNoVirtualRegs.print(writer);
         writer.close();
     }
-
-
 }

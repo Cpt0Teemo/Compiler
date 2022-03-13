@@ -1,6 +1,7 @@
 # Part II : AST builder + Semantic Analyser
 
-The goal of part II is to modify your parser so that it can build the Abstract Syntax Tree (AST) corresponding to your input program and then perform semantic analysis.
+The goal of part II is to implement the rest of the front-end all the way to semantic analysis.
+This will involve modifying your parser so that it can build the Abstract Syntax Tree (AST) corresponding to your the input program and then perform semantic analysis.
 
 In order to achieve this goal, you will have to perform five tasks.
 First, you will have to follow the abstract grammar specification and design the Java classes that represent the AST as seen during the course.
@@ -67,16 +68,18 @@ We are now ready to bring in the new skeleton code from the **instructor** (cdub
 
 Type:
 ```
-$ git pull git@gitlab.cs.mcgill.ca:cdubach/comp520-coursework-w2021.git
+$ git pull git@gitlab.cs.mcgill.ca:cdubach/comp520-coursework-w20XX.git
 ```
+where XX is this year (e.g. 22 for 2022).
 This will cause some merge conflict(s) due to the change of the return type of some of the parse functions to return an AST node instead of void.
 For instance:
 ```
-From gitlab.cs.mcgill.ca:cdubach/comp520-coursework-w2021
+From gitlab.cs.mcgill.ca:cdubach/comp520-coursework-w20XX
  * branch            HEAD       -> FETCH_HEAD
 Auto-merging src/parser/Parser.java
 CONFLICT (content): Merge conflict in src/parser/Parser.java
 ```
+where XX is this year (e.g. 22 for 2022).
 Here, the file Parser.java is causing a merge conflict.
 In order to resolve it, you should open the file to fix the conflict.
 For the parser, you'd possibly want to remove everything between the equals symbols and the greater than symbols, e.g.
@@ -117,8 +120,12 @@ As seen in the lecture, when building the AST it is important to ensure that the
 To this end, you should start again from the initial concrete syntax grammar and update it.
 
 You should make sure the resulting grammar is non-ambiguous, eliminate left recursion and ensure that the usual C precedence and associativity rules for operators are respected based on the table below.
-As see in the lecture, left-associative operators should be handled using an iterative approach in the parser (rather than recursion).
+
+As see in the lecture, left-associative binary operators should be handled using an iterative approach in the parser (rather than recursion).
 We suggest that you express these in the grammar using a Kleane closure, which will directly translate to a loop in your parser code.
+
+The associatibity of unary operators is discussed below, but since by definition they only act on a single argument, there is no need to implement any repetition mechanism (either recursive or iterative).
+However, you should ensure that precedence is encoded correctly by creating new non-terminals in the gramamr (if needed).
 
 
 | Precedence    |Operator       | Description       |Associativity  |
@@ -138,7 +145,7 @@ We suggest that you express these in the grammar using a Kleane closure, which w
 | 7             | &&            | Logical AND | Left-to-right |
 | 8             | ⎮⎮            | Logical OR | Left-to-right |
   
-For instance, here is how to "interpret" the following piece of C code:
+Here is how to "interpret" the following piece of C code based on precedence:
  
 ```C
 array[1][2]       // (array[1])[2]
@@ -148,6 +155,19 @@ mystruct.field[1] // (mystruct.field)[1]
 &*ptr             // &(*ptr)
 &p[1]             // &(p[1])
 ```
+
+Note that associativity for unary operators seems at first a bit of an ill-defined concept.
+However, it is still a useful concept that basically specifies whether the operator is used as *prefix* or *postfix*.
+For instance, left-to-right associativity for function call tells you that if the following input were somehow valid syntactically (it is not in your language)
+```C
+foo()bar
+```
+then the call would be taking place on `foo` and not on `bar`.
+However, for type casting, if the following were syntactically correct (it is not the case in our language):
+```C
+x(int)y
+```
+then the casting operator would be applied on `y` and not on `x`.
 
 
 ## 2. AST Nodes
@@ -179,7 +199,9 @@ Using EBNF syntax, the output should be of the form: `AST_NODE_CLASS_NAME '(' [S
 
 * `y = 3*x;` should result in the following output: `Assign(VarExpr(y),BinOp(IntLiteral(3), MUL, VarExpr(x)))`.
 * `void foo() { return; }` should result in: `FunDecl(VOID, foo, Block(Return()))`.
-* `-x;` should result in: `BinOp(IntLiteral(0),SUB,VarExpr(x))`.
+* `+x` should result in just `BinOp(IntLiteral(0),ADD,VarExpr(x))`
+* `-x` should result in: `BinOp(IntLiteral(0),SUB,VarExpr(x))`.
+* `-x*3` should result in: `BinOp(BinOp(IntLiteral(0),SUB,VarExpr(x)),MUL,IntLiteral(3))`.
 * `-1` should result in `BinOp(IntLiteral(0),SUB,IntLiteral(1))`.
 * `2+3+4` should result in `BinOp(BinOp(IntLiteral(2), ADD, IntLiteral(3)), ADD, IntLiteral(4))`  (all binary operators are left associative in our language)
 * `2+3*4` should result in `BinOp(IntLiteral(2), ADD, BinOp(IntLiteral(3), MUL, IntLiteral(4))`  (multiplication has precedence over addition, see precedence table)
@@ -189,6 +211,8 @@ Using EBNF syntax, the output should be of the form: `AST_NODE_CLASS_NAME '(' [S
 Note that you are free to add white spaces in your output format; spaces, newlines and tabulations will be ignore by our comparison tool.
 
 See the file [fibonacci.c-ast-dump](./fibonacci.c-ast-dump) for an example output of `java -cp bin Main -ast tests/fibonacci.c fibonacci.c-ast-dump`.
+
+Note that we represent the `-` and `+` unary operators using a `BinOp` add/sub AST node with `0` as first argument.
 
 ## 4'. Dot Printer (Optional)
 
@@ -304,11 +328,13 @@ i=(int)c;
 
 ## 7. Checking lvalues
 
-Finally, your last task will consist in checking that *lvalues* (left-values) are the only expressions that can appear on the left-hand side of an assignment or as an argument to the *address-of* operator (&). 
-Intuitivily, an *lvalue* represents some identifiable memory location that has a corresponding address. 
+Finally, your last task will consist in checking that *lvalues* (left-values) are the only expressions that can appear on the left-hand side of an assignment (`=`) or as an argument to the *address-of* operator (`&`). 
+Intuitively, an *lvalue* represents some identifiable memory location that has a corresponding address. 
 
-In our language, the only *lvalues* are: VarExpr, FieldAccessExpr, ArrayAccessExpr or ValueAtExpr.
-For instance the following code is legal:
+In our language, the only *lvalues* are: VarExpr, ArrayAccessExpr, ValueAtExpr and FieldAccessExpr.
+Note that a FieldAccessExpr is an *lvalues* only if the first expression (the structure you are accessing) is itself an *lvalue*.
+
+Example of legal code:
 ```C
 int i;
 int* p;
@@ -317,11 +343,13 @@ i  = 0;
 *p = i;
 p  = &i;
 ```
-whereas the following code is invalid:
+whereas the following code shows examples of invalid cases:
 ```C
 int i;
 i+2=3; // i+2 is not an lvalue
 &3;    // 3 is not an lvalue
+...
+foo().a; // foo() is not an lvalue, therefore foo().a is not an lvalue
 ```
 
 

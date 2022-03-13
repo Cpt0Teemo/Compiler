@@ -1,11 +1,16 @@
+import gen.CodeGenerator;
 import lexer.Scanner;
 import lexer.Token;
 import lexer.Tokeniser;
 import parser.Parser;
+import ast.ASTPrinter;
+import ast.Program;
+import sem.SemanticAnalyzer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * The Main file implies an interface for the subsequent components, e.g.
@@ -49,6 +54,7 @@ public class Main {
         }
 
         File inputFile = new File(args[1]);
+        File outputFile = new File(args[2]);
 
         Scanner scanner;
         try {
@@ -73,16 +79,56 @@ public class Main {
 		    parser.parse();
 		    if (parser.getErrorCount() == 0)
 		    	System.out.println("Parsing: pass");
-		    else
-		    	System.out.println("Parsing: failed ("+parser.getErrorCount()+" errors)");
-		    System.exit(parser.getErrorCount() == 0 ? PASS : PARSER_FAIL);
-        }  else if (mode == Mode.AST) {
-            System.out.println("AST building not implemented");
-            System.exit(MODE_FAIL);
+            else
+                System.out.println("Parsing: failed (" + parser.getErrorCount() + " errors)");
+            System.exit(parser.getErrorCount() == 0 ? PASS : PARSER_FAIL);
+        } else if (mode == Mode.AST) {
+            Parser parser = new Parser(tokeniser);
+            Program programAst = parser.parse();
+            if (parser.getErrorCount() == 0) {
+                PrintWriter writer;
+                StringWriter sw = new StringWriter();
+                try {
+                    writer = new PrintWriter(sw);
+                    programAst.accept(new ASTPrinter(writer));
+                    writer.flush();
+                    System.out.print(sw.toString());
+                    writer.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else
+                System.out.println("Parsing: failed (" + parser.getErrorCount() + " errors)");
+            System.exit(parser.getErrorCount() == 0 ? PASS : PARSER_FAIL);
+        } else if (mode == Mode.SEMANTICANALYSIS) {
+            Parser parser = new Parser(tokeniser);
+            Program programAst = parser.parse();
+            if (parser.getErrorCount() == 0) {
+                SemanticAnalyzer sem = new SemanticAnalyzer();
+                int errors = sem.analyze(programAst);
+                if (errors == 0)
+                    System.out.println("Semantic analysis: Pass");
+                else
+                    System.out.println("Semantic analysis: Failed (" + errors + ")");
+                System.exit(errors == 0 ? PASS : SEM_FAIL);
+            } else
+                System.exit(PARSER_FAIL);
         } else if (mode == Mode.GEN) {
-            System.out.println("Code generation not implemented");
-            System.exit(MODE_FAIL);
-
+            Parser parser = new Parser(tokeniser);
+            Program programAst = parser.parse();
+            if (parser.getErrorCount() > 0)
+                System.exit(PARSER_FAIL);
+            SemanticAnalyzer sem = new SemanticAnalyzer();
+            int errors = sem.analyze(programAst);
+            if (errors > 0)
+                System.exit(SEM_FAIL);
+            CodeGenerator codegen = new CodeGenerator();
+            try {
+                codegen.emitProgram(programAst, outputFile);
+            } catch (FileNotFoundException e) {
+                System.out.println("File "+outputFile.toString()+" does not exist.");
+                System.exit(FILE_NOT_FOUND);
+            }
         } else {
         	System.exit(MODE_FAIL);
         }

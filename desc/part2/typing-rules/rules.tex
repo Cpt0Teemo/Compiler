@@ -25,8 +25,10 @@
 }{add\ \langle v : \textbf{T}\rangle\ to\ \Gamma}
 \end{mathpar}
 
+
+
 \begin{mathpar}
-\inferrule*[left=FunDecl(\textup{f})]{\ }{add\ \langle f: \overline{U} \rightarrow \textbf{T} \rangle\ to\ \Gamma}
+\inferrule*[left=FunDecl(\textup{f})]{\ }{add\ \langle f: (U_1, \ldots, U_n) \rightarrow \textbf{T} \rangle\ to\ \Gamma}
 \end{mathpar}
 
 
@@ -48,15 +50,29 @@
 \end{mathpar}
 
 % FunCallExpr
+%% \begin{mathpar}
+%% \inferrule*[left=FunCallExpr(\textup{f})]{
+%% %
+%% \vdash \langle f: \overline{U} \rightarrow \textbf{T} \rangle \in \Gamma
+%% \and
+%% \Gamma \vdash \overline{Var} : \overline{U}
+%% %
+%% }{\Gamma \vdash f(\overline{Var}) : \textbf{T}}
+%% \end{mathpar}
 \begin{mathpar}
-\inferrule*[left=FunCallExpr(\textup{f})]{
+\inferrule*[left=FunCall(\textup{f})]{
 %
-\vdash \langle f: \overline{U} \rightarrow \textbf{T} \rangle \in \Gamma
+\Gamma \vdash f: (U_1, \ldots, U_n) \rightarrow \textbf{T}
 \and
-\Gamma \vdash \overline{Var} : \overline{U}
+\Gamma \vdash x_1 : U_1
+\and
+\ldots
+\and
+\Gamma \vdash x_n : U_n
 %
-}{\Gamma \vdash f(\overline{Var}) : \textbf{T}}
+}{\Gamma \vdash f(x_1, \ldots, x_n) : \textbf{T}}
 \end{mathpar}
+
 
 
 % int BinOp
@@ -134,11 +150,11 @@
 \end{mathpar}
 
 \begin{mathpar}
-\inferrule*[left=Return(from \textup{f})]{\Gamma \vdash f: \overline{U} \rightarrow \textbf{T} \\ \Gamma \vdash e : \textbf{T}}{\Gamma \vdash return\ e}
+\inferrule*[left=Return(from \textup{f})]{\Gamma \vdash f: (U_1, \ldots, U_n) \rightarrow \textbf{T} \\ \Gamma \vdash e : \textbf{T}}{\Gamma \vdash return\ e}
 \end{mathpar}
 
 \begin{mathpar}
-\inferrule*[left=Return(nothing from \textup{f})]{\Gamma \vdash f: \overline{U} \rightarrow \textbf{void}}{\Gamma \vdash return\ \varnothing}
+\inferrule*[left=Return(nothing from \textup{f})]{\Gamma \vdash f: (U_1, \ldots, U_n) \rightarrow \textbf{void}}{\Gamma \vdash return\ \varnothing}
 \end{mathpar}
  
 \end{document}
