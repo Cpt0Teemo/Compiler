@@ -174,6 +174,13 @@ public class ExprGen implements ASTVisitor<Register> {
             asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 5);
             asmProg.getCurrentSection().emit(OpCode.SYSCALL);
             asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.v0, 0);
+        } else if(fc.fnName.matches("mcmalloc")) {
+            asmProg.getCurrentSection().emit(new Comment("Mcmalloc function call"));
+            Register sizeReg = fc.params.get(0).accept(this);
+            asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 9);
+            asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.a0, sizeReg, 0);
+            asmProg.getCurrentSection().emit(OpCode.SYSCALL);
+            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.v0, 0);
         } else {
             fc.accept(funGen);
         }
@@ -244,7 +251,7 @@ public class ExprGen implements ASTVisitor<Register> {
         Register rReg = m.right.accept(this);
         Register register = Register.Virtual.create();
         asmProg.getCurrentSection().emit(OpCode.MULT, lReg, rReg);
-        asmProg.getCurrentSection().emit(OpCode.MFHI, register);
+        asmProg.getCurrentSection().emit(OpCode.MFLO, register);
         return register;
     }
 
