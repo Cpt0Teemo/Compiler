@@ -189,18 +189,20 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitTypeCastExpr(TypeCastExpr tc) {
-
-        return null;
+        return tc.expr.accept(this);
     }
 
     @Override
     public Register visitValueAtExpr(ValueAtExpr va) {
+        Register register = Register.Virtual.create();
+        Register exprReg = va.expr.accept(this);
+        asmProg.getCurrentSection().emit(OpCode.LW, register, exprReg, 0);
         return null;
     }
 
     @Override
     public Register visitAddressOfExpr(AddressOfExpr ao) {
-        return null;
+        return ao.expr.accept(new AddrGen(asmProg));
     }
 
     @Override

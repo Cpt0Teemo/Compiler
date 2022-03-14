@@ -27,7 +27,7 @@ public enum BaseType implements Type {
     public int getSize() {
         switch (this) {
             case INT: return 4;
-            case CHAR: return 1;
+            case CHAR: return 4;
             default: return 0;
         }
     }
