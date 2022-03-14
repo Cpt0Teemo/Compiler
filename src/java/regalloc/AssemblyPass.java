@@ -15,4 +15,9 @@ public interface AssemblyPass {
      * @return A transformed version of {@code program}.
      */
     AssemblyProgram apply(AssemblyProgram program);
+
+    /**
+     * An assembly pass that simply returns its input.
+     */
+    AssemblyPass NOP = program -> program;
 }
