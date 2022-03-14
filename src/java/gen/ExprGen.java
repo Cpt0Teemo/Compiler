@@ -148,28 +148,32 @@ public class ExprGen implements ASTVisitor<Register> {
         Register register = Register.Virtual.create();
         if(fc.fnName.matches("print_i")) {
             asmProg.getCurrentSection().emit(new Comment("Print_i function call"));
-            Register valueReg = fc.params.get(0).accept(new AddrGen(asmProg));
+            Register valueReg = fc.params.get(0).accept(this);
             asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 1);
-            asmProg.getCurrentSection().emit(OpCode.LW, Register.Arch.a0, valueReg, 0);
+            asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.a0, valueReg, 0);
             asmProg.getCurrentSection().emit(OpCode.SYSCALL);
         } else if(fc.fnName.matches("print_c")) {
             asmProg.getCurrentSection().emit(new Comment("Print_c function call"));
-            Register valueReg = fc.params.get(0).accept(new AddrGen(asmProg));
+            Register valueReg = fc.params.get(0).accept(this);
             asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 11);
-            asmProg.getCurrentSection().emit(OpCode.LW, Register.Arch.a0, valueReg, 0);
+            asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.a0, valueReg, 0);
             asmProg.getCurrentSection().emit(OpCode.SYSCALL);
         } else if(fc.fnName.matches("print_s")) {
             asmProg.getCurrentSection().emit(new Comment("Print_s function call"));
-            Register addrReg = fc.params.get(0).accept(new AddrGen(asmProg));
-            asmProg.getCurrentSection().emit(OpCode.LW, Register.Arch.a0, addrReg, 0);
-            asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.v0, Register.Arch.zero, 4);
+            Register strReg = fc.params.get(0).accept(this);
+            asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 4);
+            asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.a0, strReg, 0);
             asmProg.getCurrentSection().emit(OpCode.SYSCALL);
         } else if(fc.fnName.matches("read_c")) {
-            asmProg.getCurrentSection().emit(new Comment("Print_c function call"));
-            Register addrReg = fc.params.get(0).accept(new AddrGen(asmProg));
+            asmProg.getCurrentSection().emit(new Comment("Read_c function call"));
             asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 12);
-            asmProg.getCurrentSection().emit(OpCode.MOVZ, Register.Arch.a0, addrReg, Register.Arch.zero);
             asmProg.getCurrentSection().emit(OpCode.SYSCALL);
+            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.v0, 0);
+        } else if(fc.fnName.matches("read_i")) {
+            asmProg.getCurrentSection().emit(new Comment("Read_i function call"));
+            asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 5);
+            asmProg.getCurrentSection().emit(OpCode.SYSCALL);
+            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.v0, 0);
         } else {
             fc.accept(funGen);
         }
