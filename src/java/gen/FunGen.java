@@ -140,19 +140,7 @@ public class FunGen implements ASTVisitor<Void> {
 
     @Override
     public Void visitFunCallExpr(FunCallExpr fc) {
-        if(fc.fnName.matches("print_i")) {
-            asmProg.getCurrentSection().emit(new Comment("Print_i function call"));
-            Register valueReg = fc.params.get(0).accept(new AddrGen(asmProg));
-            asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 1);
-            asmProg.getCurrentSection().emit(OpCode.LW, Register.Arch.a0, valueReg, 0);
-            asmProg.getCurrentSection().emit(OpCode.SYSCALL);
-        } else if(fc.fnName.matches("print_c")) {
-            asmProg.getCurrentSection().emit(new Comment("Print_c function call"));
-            Register valueReg = fc.params.get(0).accept(new AddrGen(asmProg));
-            asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 11);
-            asmProg.getCurrentSection().emit(OpCode.LW, Register.Arch.a0, valueReg, 0);
-            asmProg.getCurrentSection().emit(OpCode.SYSCALL);
-        }
+
         return null;
     }
 

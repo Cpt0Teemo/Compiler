@@ -94,7 +94,8 @@ public class AddrGen implements ASTVisitor<Register> {
             asmProg.getCurrentSection().emit(OpCode.LA, register, v.vd.label);
         } else {
             asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.fp, v.vd.offset);
-            asmProg.getCurrentSection().emit(OpCode.LW, register, Register.Arch.fp, v.vd.offset);
+            // Don't do this, we want address
+            // asmProg.getCurrentSection().emit(OpCode.LW, register, Register.Arch.fp, v.vd.offset);
         }
         return register;
     }
@@ -146,7 +147,9 @@ public class AddrGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitStrLiteral(StrLiteral str) {
-        return null;
+        Register register = Register.Virtual.create();
+        asmProg.getCurrentSection().emit(OpCode.LA, register, str.label);
+        return register;
     }
 
     @Override
