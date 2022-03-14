@@ -20,4 +20,9 @@ public class PointerType implements Type {
         else
             return false;
     }
+
+    @Override
+    public int getSize() {
+        return 4;
+    }
 }

@@ -21,4 +21,17 @@ public class StructType implements Type {
         else
             return false;
     }
+
+    @Override
+    public int getSize() {
+        var structVars = this.structTypeDecl.varDecls;
+        var size = 0;
+        for(VarDecl varDecl : structVars) {
+            if(varDecl.type == BaseType.CHAR )
+                size += 4;
+            else
+                size += varDecl.type.getSize();
+        }
+        return size;
+    }
 }

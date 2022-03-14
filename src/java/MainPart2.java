@@ -1,10 +1,13 @@
 import ast.ASTPrinter;
 import ast.Program;
+import gen.ProgramGen;
 import lexer.Scanner;
 import lexer.Token;
 import lexer.Tokeniser;
 import parser.Parser;
+import regalloc.NaiveRegAlloc;
 import sem.SemanticAnalyzer;
+import gen.asm.AssemblyProgram;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,7 +39,7 @@ public class MainPart2 {
         System.exit(-1);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
 
         if (args.length != 3)
             usage();
@@ -113,6 +116,18 @@ public class MainPart2 {
             } else
                 System.exit(PARSER_FAIL);
         } else if (mode == Mode.GEN) {
+            Parser parser = new Parser(tokeniser);
+            Program programAst = parser.parse();
+            SemanticAnalyzer sem = new SemanticAnalyzer();
+            int errors = sem.analyze(programAst);
+            AssemblyProgram prog = new AssemblyProgram();
+            ProgramGen programGen = new ProgramGen(prog);
+            programAst.accept(programGen);
+            PrintWriter pw = new PrintWriter("temp.asm");
+            prog.print(pw);
+            AssemblyProgram newProg = NaiveRegAlloc.INSTANCE.apply(prog);
+            PrintWriter writer = new PrintWriter("temp2.asm");
+            newProg.print(writer);
             System.exit(MODE_FAIL);
         } else {
         	System.exit(MODE_FAIL);

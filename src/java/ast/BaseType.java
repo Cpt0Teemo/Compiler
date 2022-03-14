@@ -22,4 +22,14 @@ public enum BaseType implements Type {
     public boolean isEqual(Type t) {
         return t == this;
     }
+
+    @Override
+    public int getSize() {
+        switch (this) {
+            case INT: return 4;
+            case CHAR: return 1;
+            default: return 0;
+        }
+    }
+
 }

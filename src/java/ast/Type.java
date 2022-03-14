@@ -6,4 +6,6 @@ public interface Type extends ASTNode {
 
     public boolean isEqual(Type t);
 
+    public int getSize();
+
 }

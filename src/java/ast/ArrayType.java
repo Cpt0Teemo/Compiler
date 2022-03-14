@@ -22,4 +22,10 @@ public class ArrayType implements Type {
         else
             return false;
     }
+
+    @Override
+    public int getSize() {
+        int x = this.type.getSize() * size;
+        return x + (4 - (x % 4));
+    }
 }
