@@ -5,6 +5,7 @@ import lexer.Tokeniser;
 import parser.Parser;
 import ast.ASTPrinter;
 import ast.Program;
+import regalloc.NaiveRegAlloc;
 import sem.SemanticAnalyzer;
 
 import java.io.File;
@@ -27,12 +28,12 @@ public class Main {
     private static final int PASS           = 0;
     
     private enum Mode {
-        LEXER, PARSER, AST, SEMANTICANALYSIS, GEN
+        LEXER, PARSER, AST, SEMANTICANALYSIS, GEN, REGALLOC
     }
 
     private static void usage() {
         System.out.println("Usage: java "+ Main.class.getSimpleName()+" pass inputfile outputfile");
-        System.out.println("where pass is either: -lexer, -parser, -ast, -sem or -gen");
+        System.out.println("where pass is either: -lexer, -parser, -ast, -sem, -gen, or -regalloc");
         System.exit(-1);
     }
 
@@ -43,11 +44,12 @@ public class Main {
 
         Mode mode = null;
         switch (args[0]) {
-            case "-lexer":  mode = Mode.LEXER; break;
-            case "-parser": mode = Mode.PARSER; break;
-            case "-ast":    mode = Mode.AST; break;
-            case "-sem":    mode = Mode.SEMANTICANALYSIS; break;
-            case "-gen":    mode = Mode.GEN; break;
+            case "-lexer":    mode = Mode.LEXER; break;
+            case "-parser":   mode = Mode.PARSER; break;
+            case "-ast":      mode = Mode.AST; break;
+            case "-sem":      mode = Mode.SEMANTICANALYSIS; break;
+            case "-gen":      mode = Mode.GEN; break;
+            case "-regalloc": mode = Mode.REGALLOC; break;
             default:
                 usage();
                 break;
@@ -113,7 +115,7 @@ public class Main {
                 System.exit(errors == 0 ? PASS : SEM_FAIL);
             } else
                 System.exit(PARSER_FAIL);
-        } else if (mode == Mode.GEN) {
+        } else if (mode == Mode.GEN || mode == Mode.REGALLOC) {
             Parser parser = new Parser(tokeniser);
             Program programAst = parser.parse();
             if (parser.getErrorCount() > 0)
@@ -122,7 +124,10 @@ public class Main {
             int errors = sem.analyze(programAst);
             if (errors > 0)
                 System.exit(SEM_FAIL);
-            CodeGenerator codegen = new CodeGenerator();
+
+            var codegen = mode == Mode.GEN
+                ? new CodeGenerator(NaiveRegAlloc.INSTANCE)
+                : new CodeGenerator();
             try {
                 codegen.emitProgram(programAst, outputFile);
             } catch (FileNotFoundException e) {
