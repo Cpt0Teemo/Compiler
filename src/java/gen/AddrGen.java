@@ -1,9 +1,7 @@
 package gen;
 
 import ast.*;
-import gen.asm.AssemblyProgram;
-import gen.asm.OpCode;
-import gen.asm.Register;
+import gen.asm.*;
 
 /**
  * Generates code to calculate the address of an expression and return the result in a register.
@@ -12,9 +10,11 @@ public class AddrGen implements ASTVisitor<Register> {
 
 
     private AssemblyProgram asmProg;
+    private ExprGen exprGen;
 
-    public AddrGen(AssemblyProgram asmProg) {
+    public AddrGen(AssemblyProgram asmProg, ExprGen exprGen) {
         this.asmProg = asmProg;
+        this.exprGen = exprGen;
     }
 
     @Override
@@ -24,17 +24,17 @@ public class AddrGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitStructType(StructType st) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitPointerType(PointerType pt) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitArrayType(ArrayType at) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
@@ -49,27 +49,27 @@ public class AddrGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitWhile(While w) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitIf(If i) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitReturn(Return r) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitAssign(Assign a) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitExprStmt(ExprStmt es) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
@@ -102,119 +102,140 @@ public class AddrGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitSizeOfExpr(SizeOfExpr so) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitArrayAccessExpr(ArrayAccessExpr so) {
-        return null;
+        int offsetSize = so.type.getSize();
+        Register tempReg = Register.Virtual.create();
+        Register offsetReg = Register.Virtual.create();
+        Register register = Register.Virtual.create();
+        Register addrReg = so.array.accept(this);
+        Register indexReg = so.index.accept(exprGen);
+        asmProg.getCurrentSection().emit(OpCode.LI, tempReg, offsetSize);
+        asmProg.getCurrentSection().emit(OpCode.MULT, indexReg, tempReg);
+        asmProg.getCurrentSection().emit(OpCode.MFLO, offsetReg);
+        asmProg.getCurrentSection().emit(OpCode.ADD, register, addrReg, offsetReg);
+
+        return register;
     }
 
     @Override
     public Register visitFieldAccessExpr(FieldAccessExpr fa) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitFunCallExpr(FunCallExpr fc) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitTypeCastExpr(TypeCastExpr tc) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitValueAtExpr(ValueAtExpr va) {
-        return null;
+        Register register = Register.Virtual.create();
+        Register exprReg = va.expr.accept(this);
+        asmProg.getCurrentSection().emit(OpCode.LW, register, exprReg, 0);
+        return register;
     }
 
     @Override
     public Register visitAddressOfExpr(AddressOfExpr ao) {
-        return null;
+        return ao.expr.accept(this);
     }
 
     @Override
     public Register visitIntLiteral(IntLiteral i) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitChrLiteral(ChrLiteral c) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitStrLiteral(StrLiteral str) {
+        str.label =  Label.create();
         Register register = Register.Virtual.create();
+        asmProg.sections.get(0).emit(str.label);
+        int padding = 4 - ((str.str.length()+1)%4);
+        String paddedStr = str.str;
+        for(int i = 0; i < padding; i++)
+            paddedStr += '\0';
+        asmProg.sections.get(0).emit(new Directive("asciiz \"" + paddedStr +  "\""));
         asmProg.getCurrentSection().emit(OpCode.LA, register, str.label);
         return register;
     }
 
     @Override
     public Register visitAdd(Add a) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitSub(Sub s) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitMul(Mul m) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitDiv(Div d) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitMod(Mod m) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitGt(Gt g) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitLt(Lt l) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitGe(Ge g) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitLe(Le l) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitNe(Ne n) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitEq(Eq e) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitOr(Or o) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitAnd(And a) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     // TODO: to complete (only deal with Expression nodes, anything else should throw ShouldNotReach)

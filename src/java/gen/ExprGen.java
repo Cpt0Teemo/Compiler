@@ -14,10 +14,12 @@ public class ExprGen implements ASTVisitor<Register> {
 
     private AssemblyProgram asmProg;
     private FunGen funGen;
+    private AddrGen addrGen;
 
     public ExprGen(AssemblyProgram asmProg, FunGen funGen) {
         this.asmProg = asmProg;
         this.funGen = funGen;
+        this.addrGen = new AddrGen(asmProg, this);
     }
 
     @Override
@@ -27,17 +29,17 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitStructType(StructType st) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitPointerType(PointerType pt) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitArrayType(ArrayType at) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
@@ -87,14 +89,17 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitReturn(Return r) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitAssign(Assign a) {
-        Register addrReg = a.leftExpr.accept(new AddrGen(asmProg));
+        Register addrReg = a.leftExpr.accept(addrGen);
         Register valReg = a.rightExpr.accept(this);
-        asmProg.getCurrentSection().emit(OpCode.SW, valReg, addrReg, 0);
+        if(a.leftExpr.type == BaseType.CHAR)
+            asmProg.getCurrentSection().emit(OpCode.SB, valReg, addrReg, 0);
+        else
+            asmProg.getCurrentSection().emit(OpCode.SW, valReg, addrReg, 0);
         return null;
     }
 
@@ -120,7 +125,7 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitVarExpr(VarExpr v) {
-        Register addrReg = v.accept(new AddrGen(asmProg));
+        Register addrReg = v.accept(addrGen);
         Register register = Register.Virtual.create();
         asmProg.getCurrentSection().emit(OpCode.LW, register, addrReg, 0);
         return register;
@@ -135,32 +140,40 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitArrayAccessExpr(ArrayAccessExpr so) {
-        return null;
+
+        Register register = Register.Virtual.create();
+        Register addrReg = so.accept(addrGen);
+
+        if(so.type == BaseType.CHAR)
+            asmProg.getCurrentSection().emit(OpCode.LB, register, addrReg, 0);
+        else
+            asmProg.getCurrentSection().emit(OpCode.LW, register, addrReg, 0);
+        return register;
     }
 
     @Override
     public Register visitFieldAccessExpr(FieldAccessExpr fa) {
-        return null;
+        throw new ShouldNotReach();
     }
 
     @Override
     public Register visitFunCallExpr(FunCallExpr fc) {
         Register register = Register.Virtual.create();
         if(fc.fnName.matches("print_i")) {
-            asmProg.getCurrentSection().emit(new Comment("Print_i function call"));
             Register valueReg = fc.params.get(0).accept(this);
+            asmProg.getCurrentSection().emit(new Comment("Print_i function call"));
             asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 1);
             asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.a0, valueReg, 0);
             asmProg.getCurrentSection().emit(OpCode.SYSCALL);
         } else if(fc.fnName.matches("print_c")) {
-            asmProg.getCurrentSection().emit(new Comment("Print_c function call"));
             Register valueReg = fc.params.get(0).accept(this);
+            asmProg.getCurrentSection().emit(new Comment("Print_c function call"));
             asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 11);
             asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.a0, valueReg, 0);
             asmProg.getCurrentSection().emit(OpCode.SYSCALL);
         } else if(fc.fnName.matches("print_s")) {
-            asmProg.getCurrentSection().emit(new Comment("Print_s function call"));
             Register strReg = fc.params.get(0).accept(this);
+            asmProg.getCurrentSection().emit(new Comment("Print_s function call"));
             asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 4);
             asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.a0, strReg, 0);
             asmProg.getCurrentSection().emit(OpCode.SYSCALL);
@@ -189,20 +202,26 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitTypeCastExpr(TypeCastExpr tc) {
-        return tc.expr.accept(this);
+        if(tc.castType instanceof PointerType || tc.castType instanceof ArrayType) {
+            return tc.expr.accept(addrGen);
+        } else
+            return tc.expr.accept(this);
     }
 
     @Override
     public Register visitValueAtExpr(ValueAtExpr va) {
         Register register = Register.Virtual.create();
         Register exprReg = va.expr.accept(this);
-        asmProg.getCurrentSection().emit(OpCode.LW, register, exprReg, 0);
-        return null;
+        if(va.type == BaseType.CHAR)
+            asmProg.getCurrentSection().emit(OpCode.LB, register, exprReg, 0);
+        else
+            asmProg.getCurrentSection().emit(OpCode.LW, register, exprReg, 0);
+        return register;
     }
 
     @Override
     public Register visitAddressOfExpr(AddressOfExpr ao) {
-        return ao.expr.accept(new AddrGen(asmProg));
+        return ao.expr.accept(addrGen);
     }
 
     @Override
@@ -221,12 +240,7 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitStrLiteral(StrLiteral str) {
-        str.label =  Label.create();
-        Register register = Register.Virtual.create();
-        asmProg.sections.get(0).emit(str.label);
-        asmProg.sections.get(0).emit(new Directive("asciiz \"" + str.str + "\""));
-        asmProg.getCurrentSection().emit(OpCode.LA, register, str.label);
-        return register;
+        return str.accept(addrGen);
     }
 
     @Override
