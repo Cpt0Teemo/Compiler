@@ -7,15 +7,22 @@ As seen in the lecture, you will have to implement:
   2. Chaitin's graph colouring algorithm.
 
 You must implement this functionality as an `AssemblyPass` implementation, analogous to `NaiveRegAlloc`.
-To replace `NaiveRegAlloc` with your custom register allocator, modify the initializer of `RegAlloc`'s `INSTANCE` field
-(in `RegAlloc.java`).
-Here's what the modified initializer could look like if you name your register allocator `ChaitinRegAlloc`:
+To replace `NaiveRegAlloc` with your custom register allocator, modify `CodeGenerator`'s parameterless constructor
+(in `CodeGenerator.java`).
+Here's what the modified constructor could look like if you name your register allocator `ChaitinRegAlloc`:
 ```java
 /**
- * The default register allocation pass.
+ * Creates a code generator that relies on the default register allocator.
  */
-public static final AssemblyPass INSTANCE = ChaitinRegAlloc.INSTANCE;
+public CodeGenerator() {
+    this.registerAllocator = ChaitinRegAlloc.INSTANCE;
+}
 ```
+
+Once you have made this change, you can run your compiler with your new register allocator by replacing the `-gen`
+command-line flag with `-regalloc`.
+`-gen` will continue to use the naive register allocator, which may be of help if you want to test Part 3
+and Part 4 in isolation.
 
 > **Marking methodology:** the marking will be done using a series of automated tests.
 > The automated tests will check that your register allocator

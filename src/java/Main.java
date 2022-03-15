@@ -5,12 +5,15 @@ import lexer.Tokeniser;
 import parser.Parser;
 import ast.ASTPrinter;
 import ast.Program;
+import regalloc.AssemblyPass;
+import regalloc.NaiveRegAlloc;
 import sem.SemanticAnalyzer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.InvalidParameterException;
 
 /**
  * The Main file implies an interface for the subsequent components, e.g.
@@ -27,27 +30,28 @@ public class Main {
     private static final int PASS           = 0;
     
     private enum Mode {
-        LEXER, PARSER, AST, SEMANTICANALYSIS, GEN
+        LEXER, PARSER, AST, SEMANTICANALYSIS, GEN, GEN_NO_REGALLOC, REGALLOC
     }
 
     private static void usage() {
         System.out.println("Usage: java "+ Main.class.getSimpleName()+" pass inputfile outputfile");
-        System.out.println("where pass is either: -lexer, -parser, -ast, -sem or -gen");
+        System.out.println("where pass is either: -lexer, -parser, -ast, -sem, -gen, -gen-no-regalloc, or -regalloc");
         System.exit(-1);
     }
 
     public static void main(String[] args) {
-
         if (args.length != 3)
             usage();
 
         Mode mode = null;
         switch (args[0]) {
-            case "-lexer":  mode = Mode.LEXER; break;
-            case "-parser": mode = Mode.PARSER; break;
-            case "-ast":    mode = Mode.AST; break;
-            case "-sem":    mode = Mode.SEMANTICANALYSIS; break;
-            case "-gen":    mode = Mode.GEN; break;
+            case "-lexer":           mode = Mode.LEXER; break;
+            case "-parser":          mode = Mode.PARSER; break;
+            case "-ast":             mode = Mode.AST; break;
+            case "-sem":             mode = Mode.SEMANTICANALYSIS; break;
+            case "-gen-no-regalloc": mode = Mode.GEN_NO_REGALLOC; break;
+            case "-gen":             mode = Mode.GEN; break;
+            case "-regalloc":        mode = Mode.REGALLOC; break;
             default:
                 usage();
                 break;
@@ -113,7 +117,7 @@ public class Main {
                 System.exit(errors == 0 ? PASS : SEM_FAIL);
             } else
                 System.exit(PARSER_FAIL);
-        } else if (mode == Mode.GEN) {
+        } else if (mode == Mode.GEN || mode == Mode.REGALLOC || mode == Mode.GEN_NO_REGALLOC) {
             Parser parser = new Parser(tokeniser);
             Program programAst = parser.parse();
             if (parser.getErrorCount() > 0)
@@ -122,7 +126,8 @@ public class Main {
             int errors = sem.analyze(programAst);
             if (errors > 0)
                 System.exit(SEM_FAIL);
-            CodeGenerator codegen = new CodeGenerator();
+
+            var codegen = new CodeGenerator(determineRegisterAllocator(mode));
             try {
                 codegen.emitProgram(programAst, outputFile);
             } catch (FileNotFoundException e) {
@@ -131,6 +136,22 @@ public class Main {
             }
         } else {
         	System.exit(MODE_FAIL);
+        }
+    }
+
+    private static AssemblyPass determineRegisterAllocator(Mode mode) {
+        switch (mode) {
+            case GEN_NO_REGALLOC:
+                // Use no register allocator if the user explicitly requests it.
+                return AssemblyPass.NOP;
+            case GEN:
+                // Use the naive register allocator when testing only the code generator.
+                return NaiveRegAlloc.INSTANCE;
+            case REGALLOC:
+                // Use the default register allocator when testing the register allocator.
+                return new CodeGenerator().registerAllocator;
+            default:
+                throw new InvalidParameterException();
         }
     }
 }

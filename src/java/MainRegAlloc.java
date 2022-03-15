@@ -1,6 +1,6 @@
+import gen.CodeGenerator;
 import gen.asm.AssemblyParser;
 import gen.asm.AssemblyProgram;
-import regalloc.RegAlloc;
 
 import java.io.*;
 
@@ -36,7 +36,9 @@ public final class MainRegAlloc {
             return;
         }
 
-        var programWithoutVRegs = RegAlloc.INSTANCE.apply(program);
+        // Create a code generator to acquire the default register allocator. Then apply that register allocator.
+        var codegen = new CodeGenerator();
+        var programWithoutVRegs = codegen.registerAllocator.apply(program);
 
         PrintWriter writer;
         try {
