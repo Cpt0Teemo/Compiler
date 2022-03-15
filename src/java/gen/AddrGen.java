@@ -93,7 +93,8 @@ public class AddrGen implements ASTVisitor<Register> {
         if(v.vd.isStaticData()) {
             asmProg.getCurrentSection().emit(OpCode.LA, register, v.vd.label);
         } else if(!v.vd.isParam){
-            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.fp, -v.vd.offset);
+            int offset = v.vd.totalOffset - 4 - v.vd.offset; //TODO fix this -4 to be something else
+            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.sp, offset);
         } else if(v.vd.isParam){
             int returnSize = v.vd.fd.type == BaseType.CHAR ? 4 : v.vd.fd.type.getSize(); //TODO fix structs
             int offset = 4 + returnSize+ v.vd.paramsOffset - v.vd.offset;

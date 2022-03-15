@@ -13,6 +13,7 @@ public class FunGen implements ASTVisitor<Void> {
     private AssemblyProgram asmProg;
     private ProgramGen programGen;
     private ExprGen exprGen;
+    public FunDecl currentFun;
 
     public FunGen(AssemblyProgram asmProg, ProgramGen programGen) {
         this.asmProg = asmProg;
@@ -47,20 +48,18 @@ public class FunGen implements ASTVisitor<Void> {
 
     @Override
     public Void visitBlock(Block b) {
-        int offset = 4;
+        int offset = 0;
         for(VarDecl varDecl: b.varDecls) {
             varDecl.offset = offset;
+            offset += varDecl.type == BaseType.CHAR ? 4 : varDecl.type.getSize(); //TODO structs
+        }
+        for(VarDecl varDecl: b.varDecls) {
+            varDecl.totalOffset = offset;
             varDecl.accept(this);
-            if(varDecl.type != BaseType.CHAR)
-                offset += varDecl.type.getSize();
-            else
-                offset += 4;
         }
         for(Stmt stmt: b.stmts) {
             stmt.accept(exprGen);
         }
-        //Remove local variables
-        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, offset-4);
         return null;
     }
 
@@ -91,6 +90,7 @@ public class FunGen implements ASTVisitor<Void> {
 
     @Override
     public Void visitFunDecl(FunDecl p) {
+        this.currentFun = p;
         //Setup function arguments
         int offset = 0;
         for(VarDecl varDecl: p.params) {
@@ -120,6 +120,9 @@ public class FunGen implements ASTVisitor<Void> {
         asmProg.getCurrentSection().emit(OpCode.PUSH_REGISTERS);
         //Run function
         p.block.accept(this);
+        //Pop local variables
+        int sizeOfLocalVars = p.block.varDecls.size() == 0 ? 0 : p.block.varDecls.get(0).totalOffset;
+        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, sizeOfLocalVars);
         //Pop registers from stack
         asmProg.getCurrentSection().emit(OpCode.POP_REGISTERS);
         //Get previous frame pointer
@@ -178,22 +181,21 @@ public class FunGen implements ASTVisitor<Void> {
             offset += 4; //This needed? Depends on structs :p
         }
         //Reserve space for return value
-        int returnSize = fc.funDecl.type.getSize();
-        if(fc.funDecl.type == BaseType.CHAR) //This needed? Depends on structs :p
-            returnSize = 4;
+        int returnSize = fc.funDecl.type == BaseType.CHAR ? 4 : fc.funDecl.type.getSize(); //TODO fix for structs
         asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -returnSize);
         //Push return address on stack
         asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
-        asmProg.getCurrentSection().emit(OpCode.SW, Register.Arch.ra, Register.Arch.sp, 0);
+        asmProg.getCurrentSection().emit(OpCode.SW, Register.Arch   .ra, Register.Arch.sp, 0);
         //Call function
         asmProg.getCurrentSection().emit(OpCode.JAL, fc.funDecl.label);
         //Restore return address
         asmProg.getCurrentSection().emit(OpCode.LW, Register.Arch.ra, Register.Arch.sp, 0);
         //Get return value
-        Register returnReg = Register.Virtual.create(); //TODO FIX THIS FOR STRUCTS
-        asmProg.getCurrentSection().emit(OpCode.LW, returnReg, Register.Arch.sp, 4);
+        fc.returnRegister = Register.Virtual.create();
+        asmProg.getCurrentSection().emit(OpCode.LW, fc.returnRegister, Register.Arch.sp, returnSize); //TODO fix for structs
         //Reset stack pointer
-        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -(8 + offset));
+        int totalOffset = 4 + returnSize + offset;
+        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, totalOffset);
         return null;
     }
 

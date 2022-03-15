@@ -89,8 +89,23 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitReturn(Return r) {
-        //r.
-        throw new ShouldNotReach();
+        if(r.expr != null) {
+            Register returnReg = r.expr.accept(this);
+            int returnSize = r.expr.type == BaseType.CHAR ? 4 : r.expr.type.getSize(); //TODO fix for structs
+            asmProg.getCurrentSection().emit(OpCode.SW, returnReg, Register.Arch.fp, 4 + returnSize);
+        }
+        //End function procedure
+        //Pop local variables
+        int sizeOfLocalVars = funGen.currentFun.block.varDecls.size() == 0 ? 0 : funGen.currentFun.block.varDecls.get(0).totalOffset;
+        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, sizeOfLocalVars);
+        //Pop registers from stack
+        asmProg.getCurrentSection().emit(OpCode.POP_REGISTERS);
+        //Get previous frame pointer
+        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, 4);
+        asmProg.getCurrentSection().emit(OpCode.LW, Register.Arch.fp, Register.Arch.fp, 0);
+        //Return to previous function
+        asmProg.getCurrentSection().emit(OpCode.JR, Register.Arch.ra);
+        return null;
     }
 
     @Override
