@@ -4,6 +4,7 @@ import ast.*;
 import gen.asm.AssemblyProgram;
 import gen.asm.Directive;
 import gen.asm.Label;
+import gen.asm.OpCode;
 
 /**
  * This visitor should produce a program. Its job is simply to handle the global variable declaration by allocating
@@ -14,23 +15,29 @@ import gen.asm.Label;
 public class ProgramGen implements ASTVisitor<Void> {
 
     private final AssemblyProgram asmProg;
+    private final FunGen funGen;
+    public final Label main;
 
     private final AssemblyProgram.Section dataSection ;
 
     public ProgramGen(AssemblyProgram asmProg) {
         this.asmProg = asmProg;
         this.dataSection = asmProg.newSection(AssemblyProgram.Section.Type.DATA);
+        this.funGen = new FunGen(asmProg, this);
+        this.main = Label.create("MAIN");
     }
 
     @Override
     public Void visitFunDecl(FunDecl fd) {
         // call the visitor specialized for handling function declaration
-        return new FunGen(asmProg).visitFunDecl(fd);
+        return funGen.visitFunDecl(fd);
     }
 
     @Override
     public Void visitProgram(Program p) {
         p.varDecls.forEach(vd -> vd.accept(this));
+        AssemblyProgram.Section section = asmProg.newSection(AssemblyProgram.Section.Type.TEXT);
+        section.emit(OpCode.J, main);
         p.funDecls.forEach(fd -> fd.accept(this));
         return null;
     }

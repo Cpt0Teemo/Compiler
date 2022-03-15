@@ -92,10 +92,12 @@ public class AddrGen implements ASTVisitor<Register> {
         Register register = Register.Virtual.create();
         if(v.vd.isStaticData()) {
             asmProg.getCurrentSection().emit(OpCode.LA, register, v.vd.label);
-        } else {
-            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.fp, v.vd.offset);
-            // Don't do this, we want address
-            // asmProg.getCurrentSection().emit(OpCode.LW, register, Register.Arch.fp, v.vd.offset);
+        } else if(!v.vd.isParam){
+            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.fp, -v.vd.offset);
+        } else if(v.vd.isParam){
+            int returnSize = v.vd.fd.type == BaseType.CHAR ? 4 : v.vd.fd.type.getSize(); //TODO fix structs
+            int offset = 4 + returnSize+ v.vd.paramsOffset - v.vd.offset;
+            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.fp, offset);
         }
         return register;
     }
@@ -165,12 +167,29 @@ public class AddrGen implements ASTVisitor<Register> {
         Register register = Register.Virtual.create();
         asmProg.sections.get(0).emit(str.label);
         int padding = 4 - ((str.str.length()+1)%4);
-        String paddedStr = str.str;
-        for(int i = 0; i < padding; i++)
-            paddedStr += '\0';
-        asmProg.sections.get(0).emit(new Directive("asciiz \"" + paddedStr +  "\""));
+        asmProg.sections.get(0).emit(new Directive("asciiz \"" + decodeString(str.str) +  "\""));
+        asmProg.sections.get(0).emit(new Directive("space " + padding));
         asmProg.getCurrentSection().emit(OpCode.LA, register, str.label);
         return register;
+    }
+
+    private String decodeString(String s) {
+        String result = "";
+        for(char c: s.toCharArray()) {
+            switch (c) {
+                case '\t': result += "\\t"; continue;
+                case '\b': result += "\\b"; continue;
+                case '\n': result += "\\n"; continue;
+                case '\r': result += "\\r"; continue;
+                case '\f': result += "\\f"; continue;
+                case '\'': result += "'"; continue;
+                case '"': result += "\""; continue;
+                case '\\': result += "\\\\"; continue;
+                case '\0': result += "\\0"; continue;
+                default: result += c;
+            }
+        }
+        return result;
     }
 
     @Override

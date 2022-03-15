@@ -89,6 +89,7 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitReturn(Return r) {
+        //r.
         throw new ShouldNotReach();
     }
 
@@ -196,6 +197,8 @@ public class ExprGen implements ASTVisitor<Register> {
             asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.v0, 0);
         } else {
             fc.accept(funGen);
+            //TODO implement get returned value
+            register = fc.returnRegister;
         }
         return register;
     }

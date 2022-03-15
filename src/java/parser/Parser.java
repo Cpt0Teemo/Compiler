@@ -242,7 +242,7 @@ public class Parser {
                 type = BaseType.fromTokenClass(token.tokenClass);
                 nextToken();
             }
-            if(accept(TokenClass.ASTERIX)) {
+            while(accept(TokenClass.ASTERIX)) {
                 nextToken();
                 type = new PointerType(type);
             }
