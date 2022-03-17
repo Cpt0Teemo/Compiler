@@ -164,7 +164,11 @@ public class TypeCheckVisitor extends BaseSemanticVisitor<Type> {
 			error("Field access can only be used on structs");
 			return null;
 		}
-		fa.type = ((StructType) exprType).structTypeDecl.structType;
+		for(VarDecl varDecl: ((StructType) exprType).structTypeDecl.varDecls) {
+			if(varDecl.varName.equals(fa.field))
+				fa.type = varDecl.type;
+		}
+
 		return fa.type;
 	}
 

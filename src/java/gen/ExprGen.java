@@ -132,7 +132,10 @@ public class ExprGen implements ASTVisitor<Register> {
         Register valReg = a.rightExpr.accept(this);
         if(a.leftExpr.type == BaseType.CHAR)
             asmProg.getCurrentSection().emit(OpCode.SB, valReg, addrReg, 0);
-        else
+        else if(a.leftExpr.type instanceof StructType) {
+            for (int i = 0; i < a.leftExpr.type.getSize(); i += 4)
+                asmProg.getCurrentSection().emit(OpCode.SW, valReg, addrReg, i*4);
+        } else
             asmProg.getCurrentSection().emit(OpCode.SW, valReg, addrReg, 0);
         return null;
     }
@@ -190,7 +193,14 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitFieldAccessExpr(FieldAccessExpr fa) {
-        throw new ShouldNotReach();
+        Register addrReg = fa.accept(addrGen);
+        Register register = Register.Virtual.create();
+
+        if(fa.expr.type == BaseType.CHAR)
+            asmProg.getCurrentSection().emit(OpCode.LB, register, addrReg, 0);
+        else
+            asmProg.getCurrentSection().emit(OpCode.LW, register, addrReg, 0);
+        return register;
     }
 
     @Override

@@ -131,7 +131,20 @@ public class AddrGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitFieldAccessExpr(FieldAccessExpr fa) {
-        throw new ShouldNotReach();
+
+        Register register = Register.Virtual.create();
+        Register addrReg = fa.expr.accept(this);
+        VarDecl field = null;
+        for(VarDecl varDecl: ((StructType)fa.expr.type).structTypeDecl.varDecls) {
+            if(varDecl.varName.equals(fa.field)){
+                field = varDecl;
+                break;
+            }
+        }
+
+        assert field != null;
+        asmProg.getCurrentSection().emit(OpCode.ADDI, register, addrReg, field.offset);
+        return register;
     }
 
     @Override

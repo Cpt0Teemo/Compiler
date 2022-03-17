@@ -35,6 +35,7 @@ public class ProgramGen implements ASTVisitor<Void> {
 
     @Override
     public Void visitProgram(Program p) {
+        p.structTypeDecls.forEach(vd -> vd.accept(this));
         p.varDecls.forEach(vd -> vd.accept(this));
         AssemblyProgram.Section section = asmProg.newSection(AssemblyProgram.Section.Type.TEXT);
         section.emit(OpCode.J, main);
@@ -76,7 +77,7 @@ public class ProgramGen implements ASTVisitor<Void> {
 
     @Override
     public Void visitStructTypeDecl(StructTypeDecl st) {
-        return null;
+        return funGen.visitStructTypeDecl(st);
     }
 
     @Override

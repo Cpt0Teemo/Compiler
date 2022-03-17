@@ -44,7 +44,13 @@ public class FunGen implements ASTVisitor<Void> {
 
     @Override
     public Void visitStructTypeDecl(StructTypeDecl st) {
-        throw new ShouldNotReach();
+        int offset = 0;
+        for(int i = st.varDecls.size(); i > 0; i--) {
+            VarDecl varDecl = st.varDecls.get(i-1);
+            varDecl.offset = offset;
+            offset += varDecl.type == BaseType.CHAR ? 4 : varDecl.type.getSize();
+        }
+        return null;
     }
 
     @Override

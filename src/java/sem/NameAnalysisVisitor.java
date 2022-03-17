@@ -68,6 +68,7 @@ public class NameAnalysisVisitor extends BaseSemanticVisitor<Void> {
 
 	@Override
 	public Void visitArrayType(ArrayType bt) {
+		bt.type.accept(this);
 		return null;
 	}
 
@@ -84,6 +85,7 @@ public class NameAnalysisVisitor extends BaseSemanticVisitor<Void> {
 		for(VarDecl vd : sts.varDecls)
 			vd.accept(this);
 		this.scope = oldScope;
+		this.scope.put(new StructSymbol(sts));
 		return null;
 	}
 
