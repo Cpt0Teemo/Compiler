@@ -3,10 +3,6 @@ package gen;
 import ast.*;
 import gen.asm.*;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-
 /**
  * A visitor that produces code for a function declaration
  */
@@ -61,9 +57,10 @@ public class FunGen implements ASTVisitor<Void> {
             offset += varDecl.type == BaseType.CHAR ? 4 : varDecl.type.getSize();
         }
         for(VarDecl varDecl: b.varDecls) {
-            varDecl.totalOffset = offset;
+            varDecl.b = b;
             varDecl.accept(this);
         }
+        b.memSize = offset;
         for(Stmt stmt: b.stmts) {
             stmt.accept(exprGen);
         }
@@ -130,8 +127,7 @@ public class FunGen implements ASTVisitor<Void> {
         //Run function
         p.block.accept(this);
         //Pop local variables
-        int sizeOfLocalVars = p.block.varDecls.size() == 0 ? 0 : p.block.varDecls.get(0).totalOffset;
-        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, sizeOfLocalVars);
+        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, p.block.prevBlocksOffset());
         //Pop registers from stack
         asmProg.getCurrentSection().emit(OpCode.POP_REGISTERS);
         //Get previous frame pointer

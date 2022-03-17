@@ -58,11 +58,11 @@ public class ExprGen implements ASTVisitor<Register> {
         }
         for(VarDecl varDecl: b.varDecls) {
             varDecl.b = b;
-            varDecl.totalOffset = offset;
             varDecl.accept(funGen);
         }
         b.memSize = offset;
         b.stmts.forEach(x -> x.accept(this));
+        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, b.memSize);
         return null;
     }
 
@@ -115,8 +115,7 @@ public class ExprGen implements ASTVisitor<Register> {
         }
         //End function procedure
         //Pop local variables
-        int sizeOfLocalVars = funGen.currentFun.block.varDecls.size() == 0 ? 0 : funGen.currentFun.block.varDecls.get(0).totalOffset;
-        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, sizeOfLocalVars);
+        asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, funGen.currentBlock.prevBlocksOffset());
         //Pop registers from stack
         asmProg.getCurrentSection().emit(OpCode.POP_REGISTERS);
         //Get previous frame pointer

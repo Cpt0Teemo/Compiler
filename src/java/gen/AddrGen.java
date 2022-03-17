@@ -97,8 +97,8 @@ public class AddrGen implements ASTVisitor<Register> {
         if(v.vd.isStaticData()) {
             asmProg.getCurrentSection().emit(OpCode.LA, register, v.vd.label);
         } else if(!v.vd.isParam){
-            int offset = v.vd.offset + funGen.funCallSPOffset + calculateBlockOffset(v.vd.b);
-            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.sp, v.vd.offset + funGen.funCallSPOffset); //TODO structs
+            int offset = v.vd.offset + funGen.funCallSPOffset + v.vd.b.nextBlocksOffset();
+            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.sp, offset); //TODO structs
         } else if(v.vd.isParam){
             int returnSize = v.vd.fd.type == BaseType.CHAR ? 4 : v.vd.fd.type.getSize(); //TODO fix structs
             int offset = 4 + returnSize + 4 + v.vd.offset; //RA + Return + 4 (read the last word for reserved param)
@@ -106,10 +106,6 @@ public class AddrGen implements ASTVisitor<Register> {
             asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.fp, offset);
         }
         return register;
-    }
-
-    private int calculateBlockOffset(Block b){
-        return b != null && b.nextBlock != null ? b.nextBlock.memSize + calculateBlockOffset(b.nextBlock) : 0;
     }
 
     @Override
