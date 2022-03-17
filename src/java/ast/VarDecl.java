@@ -13,6 +13,7 @@ public class VarDecl implements ASTNode {
     public boolean isParam = false;
     public int paramsOffset;
     public FunDecl fd;
+    public Block b;
 
 
     public VarDecl(Type type, String varName) {

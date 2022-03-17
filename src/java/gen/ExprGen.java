@@ -4,8 +4,6 @@ import ast.*;
 import gen.asm.*;
 import gen.asm.Label;
 
-import java.awt.*;
-
 
 /**
  * Generates code to evaluate an expression and return the result in a register.
@@ -19,7 +17,7 @@ public class ExprGen implements ASTVisitor<Register> {
     public ExprGen(AssemblyProgram asmProg, FunGen funGen) {
         this.asmProg = asmProg;
         this.funGen = funGen;
-        this.addrGen = new AddrGen(asmProg, this);
+        this.addrGen = new AddrGen(asmProg, this, funGen);
     }
 
     @Override
@@ -49,7 +47,21 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitBlock(Block b) {
-        b.varDecls.forEach(x -> x.accept(this));
+        b.prevBlock = funGen.currentBlock;
+        b.prevBlock.nextBlock = b;
+        funGen.currentBlock = b;
+        int offset = 0;
+        for(int i = b.varDecls.size(); i > 0; i--) {
+            VarDecl varDecl = b.varDecls.get(i-1);
+            varDecl.offset = offset;
+            offset += varDecl.type == BaseType.CHAR ? 4 : varDecl.type.getSize();
+        }
+        for(VarDecl varDecl: b.varDecls) {
+            varDecl.b = b;
+            varDecl.totalOffset = offset;
+            varDecl.accept(funGen);
+        }
+        b.memSize = offset;
         b.stmts.forEach(x -> x.accept(this));
         return null;
     }
@@ -92,7 +104,14 @@ public class ExprGen implements ASTVisitor<Register> {
         if(r.expr != null) {
             Register returnReg = r.expr.accept(this);
             int returnSize = r.expr.type == BaseType.CHAR ? 4 : r.expr.type.getSize(); //TODO fix for structs
-            asmProg.getCurrentSection().emit(OpCode.SW, returnReg, Register.Arch.fp, 4 + returnSize);
+            if(r.expr.type == BaseType.CHAR)
+                asmProg.getCurrentSection().emit(OpCode.SB, returnReg, Register.Arch.fp, 4 + returnSize);
+            else
+                asmProg.getCurrentSection().emit(OpCode.SW, returnReg, Register.Arch.fp, 4 + returnSize);
+        }
+        if(funGen.currentFun.name.equalsIgnoreCase("main")) {
+            asmProg.getCurrentSection().emit(OpCode.LI, Register.Arch.v0, 10);
+            asmProg.getCurrentSection().emit(OpCode.SYSCALL);
         }
         //End function procedure
         //Pop local variables
@@ -143,7 +162,10 @@ public class ExprGen implements ASTVisitor<Register> {
     public Register visitVarExpr(VarExpr v) {
         Register addrReg = v.accept(addrGen);
         Register register = Register.Virtual.create();
-        asmProg.getCurrentSection().emit(OpCode.LW, register, addrReg, 0);
+        if(v.type == BaseType.CHAR)
+            asmProg.getCurrentSection().emit(OpCode.LB, register, addrReg, 0);
+        else
+            asmProg.getCurrentSection().emit(OpCode.LW, register, addrReg, 0);
         return register;
     }
 

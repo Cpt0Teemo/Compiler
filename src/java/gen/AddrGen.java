@@ -3,6 +3,8 @@ package gen;
 import ast.*;
 import gen.asm.*;
 
+import java.util.Collections;
+
 /**
  * Generates code to calculate the address of an expression and return the result in a register.
  */
@@ -11,10 +13,12 @@ public class AddrGen implements ASTVisitor<Register> {
 
     private AssemblyProgram asmProg;
     private ExprGen exprGen;
+    private FunGen funGen;
 
-    public AddrGen(AssemblyProgram asmProg, ExprGen exprGen) {
+    public AddrGen(AssemblyProgram asmProg, ExprGen exprGen, FunGen funGen) {
         this.asmProg = asmProg;
         this.exprGen = exprGen;
+        this.funGen = funGen;
     }
 
     @Override
@@ -93,14 +97,19 @@ public class AddrGen implements ASTVisitor<Register> {
         if(v.vd.isStaticData()) {
             asmProg.getCurrentSection().emit(OpCode.LA, register, v.vd.label);
         } else if(!v.vd.isParam){
-            int offset = v.vd.totalOffset - 4 - v.vd.offset; //TODO fix this -4 to be something else
-            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.sp, offset);
+            int offset = v.vd.offset + funGen.funCallSPOffset + calculateBlockOffset(v.vd.b);
+            asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.sp, v.vd.offset + funGen.funCallSPOffset); //TODO structs
         } else if(v.vd.isParam){
             int returnSize = v.vd.fd.type == BaseType.CHAR ? 4 : v.vd.fd.type.getSize(); //TODO fix structs
-            int offset = 4 + returnSize+ v.vd.paramsOffset - v.vd.offset;
+            int offset = 4 + returnSize + 4 + v.vd.offset; //RA + Return + 4 (read the last word for reserved param)
+            asmProg.getCurrentSection().emit(new Comment("Retrieving Parameter: " + v.vd.varName));
             asmProg.getCurrentSection().emit(OpCode.ADDI, register, Register.Arch.fp, offset);
         }
         return register;
+    }
+
+    private int calculateBlockOffset(Block b){
+        return b != null && b.nextBlock != null ? b.nextBlock.memSize + calculateBlockOffset(b.nextBlock) : 0;
     }
 
     @Override
@@ -143,7 +152,10 @@ public class AddrGen implements ASTVisitor<Register> {
     public Register visitValueAtExpr(ValueAtExpr va) {
         Register register = Register.Virtual.create();
         Register exprReg = va.expr.accept(this);
-        asmProg.getCurrentSection().emit(OpCode.LW, register, exprReg, 0);
+        if(va.type == BaseType.CHAR)
+            asmProg.getCurrentSection().emit(OpCode.LB, register, exprReg, 0);
+        else
+            asmProg.getCurrentSection().emit(OpCode.LW, register, exprReg, 0);
         return register;
     }
 
