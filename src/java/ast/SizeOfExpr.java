@@ -1,9 +1,10 @@
 package ast;
 
 public class SizeOfExpr extends Expr {
+    public Type insideType;
 
     public SizeOfExpr(Type type) {
-        this.type = type;
+        this.insideType = type;
     }
 
     public <T> T accept(ASTVisitor<T> v) {

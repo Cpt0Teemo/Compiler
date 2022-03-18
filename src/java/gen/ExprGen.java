@@ -62,6 +62,8 @@ public class ExprGen implements ASTVisitor<Register> {
         }
         b.memSize = offset;
         b.stmts.forEach(x -> x.accept(this));
+        b.prevBlock.nextBlock = null;
+        funGen.currentBlock = b.prevBlock;
         asmProg.getCurrentSection().emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, b.memSize);
         return null;
     }
@@ -174,7 +176,7 @@ public class ExprGen implements ASTVisitor<Register> {
     @Override
     public Register visitSizeOfExpr(SizeOfExpr so) {
         Register register = Register.Virtual.create();
-        asmProg.getCurrentSection().emit(OpCode.LI, register, so.type.getSize());
+        asmProg.getCurrentSection().emit(OpCode.LI, register, so.insideType.getSize());
         return register;
     }
 
@@ -251,7 +253,7 @@ public class ExprGen implements ASTVisitor<Register> {
 
     @Override
     public Register visitTypeCastExpr(TypeCastExpr tc) {
-        if(tc.castType instanceof PointerType || tc.castType instanceof ArrayType) {
+        if(tc.castType instanceof PointerType || tc.castType instanceof ArrayType || tc.castType instanceof StructType) {
             return tc.expr.accept(addrGen);
         } else
             return tc.expr.accept(this);
