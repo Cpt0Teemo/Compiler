@@ -98,12 +98,21 @@ As mentioned, you should never need more than three registers when spilling.
 Therefore, when reusing this code, you should really only be using three registers and not six as the original code suggest.
 
 
-## 6. Local variables in registers
+## Debugging Tip: Promote variables to registers
 
-Finally, your last task will consist of "promoting" all variables declared locally into virtual registers.
-To do so, you should modify your variable allocation strategy and allocate local variables in virtual registers instead of using the stack whenever possible.
+In production compilers, challenging situations for the register allocator typically arise from the use of local variables.
+Most local variables are assigned to virtual registers rather than memory by real-life compilers.
+Keeping local variables in registers helps reduce memory accesses, but increases register pressure in intricate ways that differ from the register use patterns emerging from temporary values in expressions.
 
-You should do this for every **local** variable, excepts when:
+The compiler we used to produce test assembly programs also keeps local variables in registers.
+The register use patterns resulting from this variable-to-register promotion are something your register allocator must be able to handle.
+
+You do not need to alter your register allocator for this purpose.
+The algorithms from the lectures are sufficiently general.
+However, some variable-to-register promotion may trigger bugs in your register allocator that would not have otherwise occurred.
+
+To find these bugs, you may want to update your compiler to store eligible local variables in virtual registers rather than on the stack.
+You should do this for every **local** variable, except when:
 * the variable is of type struct or array,
 * the variable is a function parameter, or
 * the variable is used with an addressOf operator.
@@ -134,4 +143,4 @@ int foo(int a     /* stack allocated */) {
 }
 ``` 
 
-> **Important**: Although this last step is an optimization, we will check that you implement it.
+> **Important:** Variable-to-register promotion is *optional.* We will not evaluate this part of the assignment. We simply recommend it as a debugging tool.
