@@ -197,11 +197,11 @@ public class ChaitinRegAlloc implements AssemblyPass {
 
                 // allocate one label for each virtual register in a new data section
                 AssemblyProgram.Section dataSec = newProg.newSection(AssemblyProgram.Section.Type.DATA);
-                dataSec.emit("Allocated labels for virtual registers");
+                /*dataSec.emit("Allocated labels for virtual registers");
                 vrMap.forEach((vr, lbl) -> {
                     dataSec.emit(lbl);
                     dataSec.emit(new Directive("space " + 4));
-                });
+                });*/
 
                 // emit new instructions that don't use any virtual registers and transform push/pop registers instructions into real sequence of instructions
                 // When dealign with push/pop registers, we assume that if a virtual register is used in the section, then it must be written into.
