@@ -5,6 +5,7 @@ package gen;
 import ast.*;
 import gen.asm.AssemblyProgram;
 import regalloc.AssemblyPass;
+import regalloc.ChaitinRegAlloc;
 import regalloc.NaiveRegAlloc;
 
 import java.io.File;
@@ -23,7 +24,7 @@ public final class CodeGenerator {
      * instance of your register allocator pass.
      */
     public CodeGenerator() {
-        this.registerAllocator = NaiveRegAlloc.INSTANCE;
+        this.registerAllocator = ChaitinRegAlloc.INSTANCE;
     }
 
     /**
@@ -55,11 +56,15 @@ public final class CodeGenerator {
         ProgramGen progGen = new ProgramGen(asmProgWithVirtualRegs);
         progGen.visitProgram(astProgram);
 
+        // print the assembly program
+        PrintWriter writer = new PrintWriter("simple.asm");
+        asmProgWithVirtualRegs.print(writer);
+
         // run the register naive allocator which remove the virtual registers
         AssemblyProgram asmProgNoVirtualRegs = registerAllocator.apply(asmProgWithVirtualRegs);
 
         // print the assembly program
-        PrintWriter writer = new PrintWriter(outputFile);
+        writer = new PrintWriter(outputFile);
         asmProgNoVirtualRegs.print(writer);
         writer.close();
     }

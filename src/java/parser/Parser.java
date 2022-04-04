@@ -4,7 +4,6 @@ import ast.*;
 import lexer.Token;
 import lexer.Token.TokenClass;
 import lexer.Tokeniser;
-import util.Pair;
 
 import java.util.*;
 
