@@ -231,7 +231,7 @@ public class ChaitinRegAlloc implements AssemblyPass {
                                 newSection.emit(directive);
                             }
                             public void visitInstruction(Instruction insn) {
-
+                                List<Register> usedRegs = new ArrayList<>();
                                 if (insn == Instruction.Nullary.pushRegisters) {
                                     newSection.emit("Original instruction: pushRegisters");
                                     for (Map.Entry e : vr) {
@@ -243,25 +243,35 @@ public class ChaitinRegAlloc implements AssemblyPass {
                                             newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
                                             newSection.emit(OpCode.SW, Register.Arch.t0, Register.Arch.sp, 0);
                                         } else {
-                                            // push $t0 onto stack
-                                            newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
-                                            newSection.emit(OpCode.SW, registers[regToInt.get((Register) e.getKey())-1], Register.Arch.sp, 0);
+                                            Register reg = registers[regToInt.get((Register) e.getKey())-1];
+                                            if(!usedRegs.contains(reg)) {
+                                                // push $t0 onto stack
+                                                newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
+                                                newSection.emit(OpCode.SW, reg, Register.Arch.sp, 0);
+                                                usedRegs.add(reg);
+                                            }
                                         }
                                     }
                                 } else if (insn == Instruction.Nullary.popRegisters) {
                                     newSection.emit("Original instruction: popRegisters");
+                                    usedRegs.clear();
                                     for (Map.Entry e : reverseVr) {
                                         if(regToInt.get(e.getKey()) == 0) {
-                                            // load content of memory at label into $t0
-                                            newSection.emit(OpCode.LA, Register.Arch.t0, (Label) e.getValue());
-                                            newSection.emit(OpCode.LW, Register.Arch.t0, Register.Arch.t0, 0);
-                                            // push $t0 onto stack
-                                            newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
-                                            newSection.emit(OpCode.SW, Register.Arch.t0, Register.Arch.sp, 0);
+                                            // pop from stack into $t0
+                                            newSection.emit(OpCode.LW, Register.Arch.t0, Register.Arch.sp, 0);
+                                            newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, 4);
+
+                                            // store content of $t0 in memory at label
+                                            newSection.emit(OpCode.LA, Register.Arch.t1, (Label) e.getValue());
+                                            newSection.emit(OpCode.SW, Register.Arch.t0, Register.Arch.t1, 0);
                                         } else {
-                                            // push $t0 onto stack
-                                            newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
-                                            newSection.emit(OpCode.SW, registers[regToInt.get((Register) e.getKey())-1], Register.Arch.sp, 0);
+                                            Register reg = registers[regToInt.get((Register) e.getKey())-1];
+                                            if(!usedRegs.contains(reg)) {
+                                                // pop from stack into $t0
+                                                newSection.emit(OpCode.LW, reg, Register.Arch.sp, 0);
+                                                newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, 4);
+                                                usedRegs.add(reg);
+                                            }
                                         }
                                     }
                                 } else
