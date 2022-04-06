@@ -8,8 +8,10 @@ public class ChaitinRegAlloc implements AssemblyPass {
 
     public final static ChaitinRegAlloc INSTANCE = new ChaitinRegAlloc();
 
-    public static Register[] tempRegs = {Register.Arch.t0, Register.Arch.t1, Register.Arch.t2, Register.Arch.t3, Register.Arch.t4, Register.Arch.t5, Register.Arch.t6, Register.Arch.t7, Register.Arch.t8, Register.Arch.t9, Register.Arch.s0, Register.Arch.s1, Register.Arch.s2, Register.Arch.s3, Register.Arch.s4};
+    public static Register[] registers = {Register.Arch.t0, Register.Arch.t1, Register.Arch.t2, Register.Arch.t3, Register.Arch.t4, Register.Arch.t5, Register.Arch.t6, Register.Arch.t7, Register.Arch.t8, Register.Arch.t9, Register.Arch.s0, Register.Arch.s1, Register.Arch.s2, Register.Arch.s3, Register.Arch.s4};
+    public static Register[] spilledRegs = {Register.Arch.s5, Register.Arch.s6, Register.Arch.s7};
     HashMap<Register, Integer> regToInt = new HashMap<Register, Integer>();
+    final Map<Register, Register> vrToAr = new HashMap<>();
 
     HashMap<Node, String> labelPointers = new HashMap<>();
     HashMap<String, Node> labelMap = new HashMap<>();
@@ -144,41 +146,46 @@ public class ChaitinRegAlloc implements AssemblyPass {
 
         section.emit("Original instruction: "+insn);
 
-        final Map<Register, Register> vrToAr = new HashMap<>();
         final Stack<Register> freeTempRegs = new Stack<>();
-        freeTempRegs.addAll(Arrays.asList(tempRegs));
+        final Stack<Register> freeSpilledRegs = new Stack<>();
+        freeTempRegs.addAll(Arrays.asList(registers));
+        freeSpilledRegs.addAll(Arrays.asList(spilledRegs));
 
         // creates a map from virtual register to temporary architecture register for all registers appearing in the instructions
         insn.registers().forEach(reg -> {
-            if (reg.isVirtual()) {
-                Register tmp = freeTempRegs.get(regToInt.get(reg));
+            if (reg.isVirtual() && regToInt.get(reg) != 0) {
+                Register tmp = freeTempRegs.get(regToInt.get(reg)-1);
+                vrToAr.put(reg, tmp);
+            } else if (reg.isVirtual()) {
+                Register tmp = freeSpilledRegs.pop();
+                Label label = vrMap.get(reg);
                 vrToAr.put(reg, tmp);
             }
         });
 
-        // load the values of any virtual registers used by the instruction from memory into a temporary architectural register
-        /*insn.uses().forEach(reg -> {
-            if (reg.isVirtual()) {
+        // load the values of any spilled registers
+        insn.uses().forEach(reg -> {
+            if (reg.isVirtual() && regToInt.get(reg) == 0) {
                 Register tmp = vrToAr.get(reg);
                 Label label = vrMap.get(reg);
                 section.emit(OpCode.LA, tmp, label);
                 section.emit(OpCode.LW, tmp, tmp, 0);
             }
-        });*/
+        });
 
         // emit new instructions where all virtual register have been replaced by architectural ones
         section.emit(insn.rebuild(vrToAr));
 
-        /*if (insn.def() != null) {
-            if (insn.def().isVirtual()) {
+        if (insn.def() != null) {
+            if (insn.def().isVirtual() && regToInt.get(insn.def()) == 0) {
                 Register tmpVal = vrToAr.get(insn.def());
-                Register tmpAddr = freeTempRegs.remove(0);
+                Register tmpAddr = freeSpilledRegs.remove(0);
                 Label label = vrMap.get(insn.def());
 
                 section.emit(OpCode.LA, tmpAddr, label);
                 section.emit(OpCode.SW, tmpVal, tmpAddr, 0);
             }
-        }*/
+        }
     }
 
     private AssemblyProgram run(AssemblyProgram prog) {
@@ -197,18 +204,20 @@ public class ChaitinRegAlloc implements AssemblyPass {
 
                 // allocate one label for each virtual register in a new data section
                 AssemblyProgram.Section dataSec = newProg.newSection(AssemblyProgram.Section.Type.DATA);
-                /*dataSec.emit("Allocated labels for virtual registers");
+                dataSec.emit("Allocated labels for spilled registers");
                 vrMap.forEach((vr, lbl) -> {
-                    dataSec.emit(lbl);
-                    dataSec.emit(new Directive("space " + 4));
-                });*/
+                    if(regToInt.get(vr) == 0) {
+                        dataSec.emit(lbl);
+                        dataSec.emit(new Directive("space " + 4));
+                    }
+                });
 
                 // emit new instructions that don't use any virtual registers and transform push/pop registers instructions into real sequence of instructions
                 // When dealign with push/pop registers, we assume that if a virtual register is used in the section, then it must be written into.
                 final AssemblyProgram.Section newSection = newProg.newSection(AssemblyProgram.Section.Type.TEXT);
-                List<Label> vrLabels = new LinkedList<>(vrMap.values());
-                List<Label> reverseVrLabels = new LinkedList<>(vrLabels);
-                Collections.reverse(reverseVrLabels);
+                List<Map.Entry<Register.Virtual, Label>> vr = new LinkedList<>(vrMap.entrySet());
+                List<Map.Entry<Register.Virtual, Label>> reverseVr = new LinkedList<>(vr);
+                Collections.reverse(vr);
 
                 section.items.forEach(item ->
                         item.accept(new AssemblyItemVisitor() {
@@ -225,25 +234,35 @@ public class ChaitinRegAlloc implements AssemblyPass {
 
                                 if (insn == Instruction.Nullary.pushRegisters) {
                                     newSection.emit("Original instruction: pushRegisters");
-                                    for (Label l : vrLabels) {
-                                        // load content of memory at label into $t0
-                                        newSection.emit(OpCode.LA, Register.Arch.t0, l);
-                                        newSection.emit(OpCode.LW, Register.Arch.t0, Register.Arch.t0, 0);
-
-                                        // push $t0 onto stack
-                                        newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
-                                        newSection.emit(OpCode.SW, Register.Arch.t0, Register.Arch.sp, 0);
+                                    for (Map.Entry e : vr) {
+                                        if(regToInt.get(e.getKey()) == 0) {
+                                            // load content of memory at label into $t0
+                                            newSection.emit(OpCode.LA, Register.Arch.t0, (Label) e.getValue());
+                                            newSection.emit(OpCode.LW, Register.Arch.t0, Register.Arch.t0, 0);
+                                            // push $t0 onto stack
+                                            newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
+                                            newSection.emit(OpCode.SW, Register.Arch.t0, Register.Arch.sp, 0);
+                                        } else {
+                                            // push $t0 onto stack
+                                            newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
+                                            newSection.emit(OpCode.SW, registers[regToInt.get((Register) e.getKey())-1], Register.Arch.sp, 0);
+                                        }
                                     }
                                 } else if (insn == Instruction.Nullary.popRegisters) {
                                     newSection.emit("Original instruction: popRegisters");
-                                    for (Label l : reverseVrLabels) {
-                                        // pop from stack into $t0
-                                        newSection.emit(OpCode.LW, Register.Arch.t0, Register.Arch.sp, 0);
-                                        newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, 4);
-
-                                        // store content of $t0 in memory at label
-                                        newSection.emit(OpCode.LA, Register.Arch.t1, l);
-                                        newSection.emit(OpCode.SW, Register.Arch.t0, Register.Arch.t1, 0);
+                                    for (Map.Entry e : reverseVr) {
+                                        if(regToInt.get(e.getKey()) == 0) {
+                                            // load content of memory at label into $t0
+                                            newSection.emit(OpCode.LA, Register.Arch.t0, (Label) e.getValue());
+                                            newSection.emit(OpCode.LW, Register.Arch.t0, Register.Arch.t0, 0);
+                                            // push $t0 onto stack
+                                            newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
+                                            newSection.emit(OpCode.SW, Register.Arch.t0, Register.Arch.sp, 0);
+                                        } else {
+                                            // push $t0 onto stack
+                                            newSection.emit(OpCode.ADDI, Register.Arch.sp, Register.Arch.sp, -4);
+                                            newSection.emit(OpCode.SW, registers[regToInt.get((Register) e.getKey())-1], Register.Arch.sp, 0);
+                                        }
                                     }
                                 } else
                                     emitInstructionWithoutVirtualRegister(insn, vrMap, newSection);

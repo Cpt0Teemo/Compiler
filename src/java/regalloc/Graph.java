@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Graph {
-    private final int k = ChaitinRegAlloc.tempRegs.length;
+    private final int k = ChaitinRegAlloc.registers.length;
     public List<Vertex> vertices;
     public HashSet<Edge> edges;
     private static HashMap<String, Vertex> registers;
@@ -82,12 +82,37 @@ public class Graph {
         }
     }
 
+    public void addSpilledVertex(VertexEdgesPair pair) {
+        vertices.add(pair.vertex);
+        edges.addAll(pair.edges);
+    }
+
     public Vertex getSubKVertex() {
         for(Vertex v: vertices) {
             if(getDegree(v) < k)
                 return v;
         }
         return null;
+    }
+
+    public Vertex getHighestDegreeVertex() {
+        HashMap<String, Integer> degrees = new HashMap<>();
+        for(Vertex v: vertices) {
+            degrees.put(v.name, 0);
+        }
+        for(Edge e: edges) {
+            degrees.put(e.v1.name, degrees.get(e.v1.name) + 1);
+            degrees.put(e.v2.name, degrees.get(e.v2.name) + 1);
+        }
+        int max = 0;
+        String maxName = "";
+        for(Map.Entry<String, Integer> e: degrees.entrySet()) {
+            if(e.getValue() > max) {
+                max = e.getValue();
+                maxName = e.getKey();
+            }
+        }
+        return registers.get(maxName);
     }
 
     public int getDegree(Vertex v) {
